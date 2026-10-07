@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { fetchStock, loadCatalogEntry, type CatalogEntry } from "./catalog";
-import type { ResolvedConnection } from "./onestock";
+import { fetchItemSheets, fetchStock, type CatalogItem } from "./catalog";
+import type { Article, ResolvedConnection } from "./onestock";
 import type { Settings } from "./settings";
 
 export type Loadable<T> = { status: "loading" } | { status: "ready"; value: T } | { status: "error"; error: unknown };
 
 export interface CatalogState {
-  catalog: Loadable<CatalogEntry>;
-  /** Stock of the variants and substitutes, keyed by item id. */
+  /** Stock of the ordered item and of its substitutes, keyed by item id. */
   stock: Loadable<Record<string, number>>;
+  /** Sheets of the substitution items listed on the ordered item. */
+  substitutes: Loadable<CatalogItem[]>;
 }
 
 export interface ApiContext {
@@ -17,9 +18,9 @@ export interface ApiContext {
   featuresLang: string;
 }
 
-const LOADING: CatalogState = { catalog: { status: "loading" }, stock: { status: "loading" } };
+const LOADING: CatalogState = { stock: { status: "loading" }, substitutes: { status: "loading" } };
 
-/** Lazily loads catalog + stock around ordered items, once per SKU. */
+/** Lazily loads stock + substitute sheets around ordered items, once per SKU. */
 export function useCatalog({ settings, conn, featuresLang }: ApiContext) {
   const [entries, setEntries] = useState<Record<string, CatalogState>>({});
   const requested = useRef(new Set<string>());
@@ -31,33 +32,24 @@ export function useCatalog({ settings, conn, featuresLang }: ApiContext) {
   }, [settings, conn.baseUrl, conn.siteId, featuresLang]);
 
   const ensure = useCallback(
-    (sku: string) => {
+    (article: Article) => {
+      const { sku, substitutionIds } = article;
       if (requested.current.has(sku)) return;
       requested.current.add(sku);
       const set = (patch: Partial<CatalogState>) =>
-        setEntries((prev) => ({
-          ...prev,
-          [sku]: { ...(prev[sku] ?? LOADING), ...patch },
-        }));
+        setEntries((prev) => ({ ...prev, [sku]: { ...(prev[sku] ?? LOADING), ...patch } }));
       set({});
 
-      const loadStock = (ids: string[]) =>
-        fetchStock(settings, conn, ids).then(
-          (value) => set({ stock: { status: "ready", value } }),
-          (error) => set({ stock: { status: "error", error } }),
-        );
-
-      loadCatalogEntry(settings, conn, sku, featuresLang).then(
-        (entry) => {
-          set({ catalog: { status: "ready", value: entry } });
-          loadStock([...entry.variants, ...entry.substitutes].map((x) => x.id));
-        },
-        (error) => {
-          set({ catalog: { status: "error", error } });
-          // Without catalog we can still show the stock of the ordered item.
-          loadStock([sku]);
-        },
+      fetchStock(settings, conn, [sku, ...substitutionIds]).then(
+        (value) => set({ stock: { status: "ready", value } }),
+        (error) => set({ stock: { status: "error", error } }),
       );
+      if (!substitutionIds.length) set({ substitutes: { status: "ready", value: [] } });
+      else
+        fetchItemSheets(settings, conn, substitutionIds, featuresLang).then(
+          (value) => set({ substitutes: { status: "ready", value } }),
+          (error) => set({ substitutes: { status: "error", error } }),
+        );
     },
     [settings, conn, featuresLang],
   );

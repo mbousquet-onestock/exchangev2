@@ -214,16 +214,15 @@ export function SettingsPanel({
           {text("featureSize", "settings.featureSize")}
           {text("featureImage", "settings.featureImage")}
         </div>
-        {text("exchangeSizes", "settings.exchangeSizes")}
-        {text("exchangeColors", "settings.exchangeColors")}
       </Section>
 
       <Section title="settings.stock">
         {text("stockRequestName", "settings.stockRequestName", t("settings.stockRequestNameHint"))}
         {text("stockEndpointIds", "settings.stockEndpointIds", t("settings.stockEndpointIdsHint"))}
+        {text("featureSubstitution", "settings.featureSubstitution", t("settings.featureSubstitutionHint"))}
         <div className="grid grid-cols-2 gap-2.5">
           {text("featurePrice", "settings.featurePrice")}
-          {text("catalogLimit", "settings.catalogLimit", t("settings.catalogLimitHint"), "number")}
+          {text("sheetFeatures", "settings.sheetFeatures", t("settings.sheetFeaturesHint"))}
         </div>
       </Section>
 

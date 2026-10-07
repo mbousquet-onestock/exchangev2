@@ -34,23 +34,22 @@ export interface Settings {
   featureImage: string;
   /** Item feature holding the price, used for substitutes (GET /items). */
   featurePrice: string;
+  /** Order item feature listing the substitution item ids. */
+  featureSubstitution: string;
+  /** Extra features shown on the substitute sheets (comma separated). */
+  sheetFeatures: string;
   /** Stock query (OMC > Configuration > Stock > Stock Queries) used by GET /stock_export. */
   stockRequestName: string;
   /** Optional stock locations (comma separated endpoint ids). */
   stockEndpointIds: string;
-  /** Max number of catalog items fetched to find variants / substitutes. */
-  catalogLimit: number;
   /** Line item group states eligible for return / exchange (comma separated). */
   eligibleStates: string;
-  /** Proposed values for a same-model exchange (comma separated). */
-  exchangeSizes: string;
-  exchangeColors: string;
   /** Comma separated; empty = default reasons in the interface language. */
   returnReasons: string;
   exchangeReasons: string;
 }
 
-const SETTINGS_VERSION = 2;
+const SETTINGS_VERSION = 3;
 
 export const DEFAULT_SETTINGS: Settings = {
   version: SETTINGS_VERSION,
@@ -72,12 +71,11 @@ export const DEFAULT_SETTINGS: Settings = {
   featureSize: "size",
   featureImage: "image_url",
   featurePrice: "price",
-  stockRequestName: "",
+  featureSubstitution: "substitution",
+  sheetFeatures: "description",
+  stockRequestName: "detailed",
   stockEndpointIds: "",
-  catalogLimit: 100,
   eligibleStates: "fulfilled",
-  exchangeSizes: "XS, S, M, L, XL",
-  exchangeColors: "Black, Grey, White, Navy, Red",
   returnReasons: "",
   exchangeReasons: "",
 };
@@ -94,7 +92,10 @@ function load(): Settings {
         delete stored.returnReasons;
         delete stored.itemFeaturesLang;
       }
-      return { ...DEFAULT_SETTINGS, ...stored, version: SETTINGS_VERSION };
+      if ((stored.version ?? 0) < 3 && !stored.stockRequestName) delete stored.stockRequestName;
+      // Keep only known keys (drops removed settings).
+      const known = Object.fromEntries(Object.entries(stored).filter(([key]) => key in DEFAULT_SETTINGS));
+      return { ...DEFAULT_SETTINGS, ...known, version: SETTINGS_VERSION };
     }
   } catch {
     // storage unavailable or corrupted: fall back to defaults

@@ -25,23 +25,23 @@ from the OneStock API and shows the articles eligible for an exchange.
    and Italian, English as fallback. It can be forced in Settings. Item features
    are requested in the same language unless set otherwise.
 5. **Reasons** — return and exchange have their own reason lists (switching the
-   action resets the reason). Empty lists in Settings use translated defaults.
+   action resets the reason). Empty lists in Settings use translated defaults
+   (return: *Rétractation, Ne convient pas*; exchange: *Casse, Non livré*).
 6. **Stock & substitutes** (`src/lib/catalog.ts`) — when an item is set to
-   *exchange*, the app loads it from the catalog (`GET /items`, `item_ids`),
-   then the items of its first category. Items with the same `product_id` are
-   its variants (*same model*: colors / sizes come from them, with the stock of
-   each size); the others are substitutes (*different model*, sorted by stock,
-   out-of-stock ones disabled). Stock comes from `GET /stock_export` with the
-   stock query set in Settings, summed over locations and stock types. Without
-   catalog, the app falls back on the static size / color lists and the items
-   of the order.
+   *exchange*: *same model* only shows the available stock of the ordered item;
+   *different model* lists the substitution items whose ids are in the ordered
+   item's `substitution` feature (`order_items.item.features.substitution`),
+   with their item sheet (`GET /items`: `item_ids`, then a pattern search on
+   each id as fallback) and their stock. Out-of-stock substitutes cannot be
+   chosen. Stock comes from `GET /stock_export` with the stock query set in
+   Settings (default `detailed`), summed over locations and stock types.
 7. **Settings tab** — hidden from customers: open it with the invisible gear
    button left of *Cancel* in the footer (it appears on hover / focus). It holds
    everything the context doesn't provide: environment /
    base URL, API version, token or login/password, fallback site & order ids
    (to use the app outside OneStock), feature names (name, color, size, image,
-   price), stock query and locations, max catalog items,
-   eligible states, exchange sizes/colors, return and exchange reasons. Stored in
+   price, substitution, sheet features), stock query and locations,
+   eligible states, return and exchange reasons. Stored in
    `localStorage`.
 
 The final step builds the return / exchange request payload (displayed on the

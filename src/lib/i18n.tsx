@@ -4,11 +4,18 @@ export const LANGUAGES = ["en", "fr", "es", "de", "it"] as const;
 export type Language = (typeof LANGUAGES)[number];
 
 const en = {
-  "config.variantNotFound": "This size / color combination does not exist for this model.",
+  "config.noSubstitutes": "No substitution item is defined for this item.",
+  "config.sheetDetails": "Item sheet",
+  "catalog.loading": "Loading item sheets…",
+  "catalog.error": "Item sheets unavailable ({detail}) — items shown with their id.",
+  "settings.featureSubstitution": "Substitution feature",
+  "settings.featureSubstitutionHint":
+    "Feature of the ordered item listing the substitution item ids (order_items.item.features.…).",
+  "settings.sheetFeatures": "Sheet features",
+  "settings.sheetFeaturesHint": "Extra features shown on the substitute sheets, comma separated.",
+  "reasons.return": "Withdrawal, Doesn't suit me",
+  "reasons.exchange": "Broken, Not delivered",
   "config.substitutes": "Possible substitutes ({count})",
-  "config.inStockOnly": "In stock only",
-  "catalog.loading": "Loading catalog…",
-  "catalog.error": "Catalog unavailable ({detail}) — showing the items of the order.",
   "stock.loading": "Checking stock…",
   "stock.available": "{count} available in stock",
   "stock.short": "{count} in stock",
@@ -25,8 +32,6 @@ const en = {
   "settings.stockEndpointIds": "Stock locations",
   "settings.stockEndpointIdsHint": "Comma separated endpoint ids. Empty = locations of the stock query.",
   "settings.featurePrice": "Price feature",
-  "settings.catalogLimit": "Max catalog items",
-  "settings.catalogLimitHint": "Items of the same category fetched to find variants and substitutes.",
   "tabs.exchange": "Exchange",
   "tabs.settings": "Settings",
   "header.noSite": "no site",
@@ -49,10 +54,6 @@ const en = {
   "config.exchangeReason": "Exchange reason",
   "config.sameModel": "Same model",
   "config.differentModel": "Different model",
-  "config.size": "Size",
-  "config.color": "Color",
-  "config.search": "Search articles...",
-  "config.noArticles": "No articles found.",
   "price.payByLink": "A pay-by-link for {amount} will be sent to complete the order.",
   "price.refund": "A refund of {amount} will be issued to the original payment method.",
   "price.even": "No additional payment or refund required for this exchange.",
@@ -148,8 +149,6 @@ const en = {
   "settings.featureColor": "Color feature",
   "settings.featureSize": "Size feature",
   "settings.featureImage": "Image feature",
-  "settings.exchangeSizes": "Exchange sizes",
-  "settings.exchangeColors": "Exchange colors",
   "settings.reasons": "Reasons",
   "settings.returnReasons": "Return reasons",
   "settings.exchangeReasons": "Exchange reasons",
@@ -167,20 +166,25 @@ const en = {
   "state.delivered": "Delivered",
   "state.collected": "Collected",
   "state.pending": "Pending",
-
-  "reasons.return": "Too small, Too big, Damaged item, Not as described, Arrived too late, Changed my mind",
-  "reasons.exchange": "Wrong size, Wrong color, Damaged item, Style doesn't suit me, Prefer another model",
 };
 
 export type MessageKey = keyof typeof en;
 type Dictionary = Record<MessageKey, string>;
 
 const fr: Dictionary = {
-  "config.variantNotFound": "Cette combinaison taille / couleur n'existe pas pour ce modèle.",
+  "config.noSubstitutes": "Aucun article de substitution n'est défini pour cet article.",
+  "config.sheetDetails": "Fiche article",
+  "catalog.loading": "Chargement des fiches articles…",
+  "catalog.error": "Fiches articles indisponibles ({detail}) — articles affichés avec leur identifiant.",
+  "settings.featureSubstitution": "Caract. substitution",
+  "settings.featureSubstitutionHint":
+    "Caractéristique de l'article commandé listant les ids des articles de substitution (order_items.item.features.…).",
+  "settings.sheetFeatures": "Caract. de la fiche",
+  "settings.sheetFeaturesHint":
+    "Caractéristiques supplémentaires affichées sur les fiches de substitution, séparées par des virgules.",
+  "reasons.return": "Rétractation, Ne convient pas",
+  "reasons.exchange": "Casse, Non livré",
   "config.substitutes": "Articles de substitution ({count})",
-  "config.inStockOnly": "En stock uniquement",
-  "catalog.loading": "Chargement du catalogue…",
-  "catalog.error": "Catalogue indisponible ({detail}) — affichage des articles de la commande.",
   "stock.loading": "Vérification du stock…",
   "stock.available": "{count} disponible(s) en stock",
   "stock.short": "{count} en stock",
@@ -198,8 +202,6 @@ const fr: Dictionary = {
   "settings.stockEndpointIdsHint":
     "Ids d'endpoints séparés par des virgules. Vide = emplacements de la requête de stock.",
   "settings.featurePrice": "Caract. prix",
-  "settings.catalogLimit": "Nb max d'articles catalogue",
-  "settings.catalogLimitHint": "Articles de la même catégorie récupérés pour trouver variantes et substituts.",
   "tabs.exchange": "Échange",
   "tabs.settings": "Paramètres",
   "header.noSite": "aucun site",
@@ -222,10 +224,6 @@ const fr: Dictionary = {
   "config.exchangeReason": "Motif d'échange",
   "config.sameModel": "Même modèle",
   "config.differentModel": "Autre modèle",
-  "config.size": "Taille",
-  "config.color": "Couleur",
-  "config.search": "Rechercher un article...",
-  "config.noArticles": "Aucun article trouvé.",
   "price.payByLink": "Un lien de paiement de {amount} vous sera envoyé pour finaliser la commande.",
   "price.refund": "Un remboursement de {amount} sera effectué sur le moyen de paiement d'origine.",
   "price.even": "Aucun paiement ni remboursement supplémentaire pour cet échange.",
@@ -323,8 +321,6 @@ const fr: Dictionary = {
   "settings.featureColor": "Caract. couleur",
   "settings.featureSize": "Caract. taille",
   "settings.featureImage": "Caract. image",
-  "settings.exchangeSizes": "Tailles proposées",
-  "settings.exchangeColors": "Couleurs proposées",
   "settings.reasons": "Motifs",
   "settings.returnReasons": "Motifs de retour",
   "settings.exchangeReasons": "Motifs d'échange",
@@ -342,19 +338,16 @@ const fr: Dictionary = {
   "state.delivered": "Livré",
   "state.collected": "Retiré",
   "state.pending": "En attente",
-
-  "reasons.return":
-    "Trop petit, Trop grand, Article endommagé, Non conforme à la description, Livré trop tard, J'ai changé d'avis",
-  "reasons.exchange":
-    "Mauvaise taille, Mauvaise couleur, Article endommagé, Le style ne me convient pas, Je préfère un autre modèle",
 };
 
 // Other languages translate the customer-facing workflow; anything missing falls back to English.
 const es: Partial<Dictionary> = {
-  "config.variantNotFound": "Esta combinación de talla / color no existe para este modelo.",
+  "config.noSubstitutes": "No hay artículos de sustitución definidos para este artículo.",
+  "config.sheetDetails": "Ficha del artículo",
+  "catalog.loading": "Cargando fichas…",
+  "reasons.return": "Desistimiento, No me queda bien",
+  "reasons.exchange": "Roto, No entregado",
   "config.substitutes": "Artículos de sustitución ({count})",
-  "config.inStockOnly": "Solo en stock",
-  "catalog.loading": "Cargando catálogo…",
   "stock.loading": "Comprobando stock…",
   "stock.available": "{count} disponible(s) en stock",
   "stock.short": "{count} en stock",
@@ -377,10 +370,6 @@ const es: Partial<Dictionary> = {
   "config.exchangeReason": "Motivo de cambio",
   "config.sameModel": "Mismo modelo",
   "config.differentModel": "Otro modelo",
-  "config.size": "Talla",
-  "config.color": "Color",
-  "config.search": "Buscar artículos...",
-  "config.noArticles": "No se encontraron artículos.",
   "price.payByLink": "Se enviará un enlace de pago de {amount} para completar el pedido.",
   "price.refund": "Se reembolsarán {amount} en el método de pago original.",
   "price.even": "No se requiere pago ni reembolso adicional para este cambio.",
@@ -412,17 +401,15 @@ const es: Partial<Dictionary> = {
   "state.returned": "Devuelto",
   "state.cancelled": "Cancelado",
   "state.delivered": "Entregado",
-  "reasons.return":
-    "Demasiado pequeño, Demasiado grande, Artículo dañado, No coincide con la descripción, Llegó tarde, He cambiado de opinión",
-  "reasons.exchange":
-    "Talla incorrecta, Color incorrecto, Artículo dañado, El estilo no me convence, Prefiero otro modelo",
 };
 
 const de: Partial<Dictionary> = {
-  "config.variantNotFound": "Diese Größen-/Farbkombination gibt es für dieses Modell nicht.",
+  "config.noSubstitutes": "Für diesen Artikel sind keine Ersatzartikel definiert.",
+  "config.sheetDetails": "Artikeldetails",
+  "catalog.loading": "Artikeldaten werden geladen…",
+  "reasons.return": "Widerruf, Passt nicht",
+  "reasons.exchange": "Beschädigt, Nicht geliefert",
   "config.substitutes": "Ersatzartikel ({count})",
-  "config.inStockOnly": "Nur auf Lager",
-  "catalog.loading": "Katalog wird geladen…",
   "stock.loading": "Bestand wird geprüft…",
   "stock.available": "{count} auf Lager verfügbar",
   "stock.short": "{count} auf Lager",
@@ -445,10 +432,6 @@ const de: Partial<Dictionary> = {
   "config.exchangeReason": "Umtauschgrund",
   "config.sameModel": "Gleiches Modell",
   "config.differentModel": "Anderes Modell",
-  "config.size": "Größe",
-  "config.color": "Farbe",
-  "config.search": "Artikel suchen...",
-  "config.noArticles": "Keine Artikel gefunden.",
   "price.payByLink": "Ein Zahlungslink über {amount} wird gesendet, um die Bestellung abzuschließen.",
   "price.refund": "Eine Erstattung von {amount} erfolgt auf die ursprüngliche Zahlungsmethode.",
   "price.even": "Für diesen Umtausch ist keine Zahlung oder Erstattung erforderlich.",
@@ -480,17 +463,15 @@ const de: Partial<Dictionary> = {
   "state.returned": "Zurückgesendet",
   "state.cancelled": "Storniert",
   "state.delivered": "Zugestellt",
-  "reasons.return":
-    "Zu klein, Zu groß, Beschädigter Artikel, Entspricht nicht der Beschreibung, Zu spät geliefert, Meinung geändert",
-  "reasons.exchange":
-    "Falsche Größe, Falsche Farbe, Beschädigter Artikel, Stil gefällt mir nicht, Lieber ein anderes Modell",
 };
 
 const it: Partial<Dictionary> = {
-  "config.variantNotFound": "Questa combinazione taglia / colore non esiste per questo modello.",
+  "config.noSubstitutes": "Nessun articolo sostitutivo definito per questo articolo.",
+  "config.sheetDetails": "Scheda articolo",
+  "catalog.loading": "Caricamento delle schede…",
+  "reasons.return": "Recesso, Non va bene",
+  "reasons.exchange": "Rotto, Non consegnato",
   "config.substitutes": "Articoli sostitutivi ({count})",
-  "config.inStockOnly": "Solo disponibili",
-  "catalog.loading": "Caricamento del catalogo…",
   "stock.loading": "Verifica dello stock…",
   "stock.available": "{count} disponibile/i in stock",
   "stock.short": "{count} in stock",
@@ -513,10 +494,6 @@ const it: Partial<Dictionary> = {
   "config.exchangeReason": "Motivo del cambio",
   "config.sameModel": "Stesso modello",
   "config.differentModel": "Altro modello",
-  "config.size": "Taglia",
-  "config.color": "Colore",
-  "config.search": "Cerca articoli...",
-  "config.noArticles": "Nessun articolo trovato.",
   "price.payByLink": "Riceverai un link di pagamento di {amount} per completare l'ordine.",
   "price.refund": "Un rimborso di {amount} sarà emesso sul metodo di pagamento originale.",
   "price.even": "Nessun pagamento o rimborso aggiuntivo per questo cambio.",
@@ -548,10 +525,6 @@ const it: Partial<Dictionary> = {
   "state.returned": "Restituito",
   "state.cancelled": "Annullato",
   "state.delivered": "Consegnato",
-  "reasons.return":
-    "Troppo piccolo, Troppo grande, Articolo danneggiato, Non conforme alla descrizione, Arrivato in ritardo, Ho cambiato idea",
-  "reasons.exchange":
-    "Taglia sbagliata, Colore sbagliato, Articolo danneggiato, Lo stile non mi piace, Preferisco un altro modello",
 };
 
 const DICTIONARIES: Record<Language, Partial<Dictionary>> = { en, fr, es, de, it };

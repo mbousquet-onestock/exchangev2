@@ -1,37 +1,28 @@
 import { ApiError, authed, type ResolvedConnection } from "./onestock";
 import { splitList, type Settings } from "./settings";
 
-/** An item of the OneStock catalog (GET /items), flattened for display. */
+/** An item sheet from the OneStock catalog (GET /items), flattened for display. */
 export interface CatalogItem {
   id: string;
-  productId?: string;
-  categoryIds: string[];
   name: string;
   color?: string;
   size?: string;
   imageUrl?: string;
   price?: number;
-}
-
-/** Catalog data around an ordered item, used by the exchange options. */
-export interface CatalogEntry {
-  item: CatalogItem;
-  /** Same product (other sizes / colors), the ordered item included. */
-  variants: CatalogItem[];
-  /** Other products of the same category: possible substitutes. */
-  substitutes: CatalogItem[];
+  /** All features returned for the item, values joined. */
+  features: Record<string, string>;
 }
 
 interface RawItem {
   id: string;
-  product_id?: string;
-  category_ids?: string[];
   features?: Record<string, unknown>;
 }
 
-function first(value: unknown): string | undefined {
-  const v = Array.isArray(value) ? value[0] : value;
-  return v === undefined || v === null || v === "" ? undefined : String(v);
+function flatten(value: unknown): string | undefined {
+  const values = (Array.isArray(value) ? value.flat(2) : [value]).filter(
+    (v) => v !== undefined && v !== null && v !== "",
+  );
+  return values.length ? values.map(String).join(", ") : undefined;
 }
 
 function toCatalogItem(raw: RawItem, settings: Settings, lang: string): CatalogItem {
@@ -40,76 +31,72 @@ function toCatalogItem(raw: RawItem, settings: Settings, lang: string): CatalogI
   const byLang = (all[lang] ?? Object.values(all).find((v) => v && typeof v === "object" && !Array.isArray(v))) as
     | Record<string, unknown>
     | undefined;
-  const features = byLang ?? all;
-  const price = Number.parseFloat(first(features[settings.featurePrice]) ?? "");
+  const features: Record<string, string> = {};
+  for (const [name, value] of Object.entries(byLang ?? all)) {
+    const text = flatten(value);
+    if (text !== undefined) features[name] = text;
+  }
+  const price = Number.parseFloat(features[settings.featurePrice] ?? "");
   return {
     id: raw.id,
-    productId: raw.product_id,
-    categoryIds: raw.category_ids ?? [],
-    name: first(features[settings.featureName]) ?? raw.id,
-    color: first(features[settings.featureColor]),
-    size: first(features[settings.featureSize]),
-    imageUrl: first(features[settings.featureImage]),
+    name: features[settings.featureName] ?? raw.id,
+    color: features[settings.featureColor],
+    size: features[settings.featureSize],
+    imageUrl: features[settings.featureImage]?.split(", ")[0],
     price: Number.isFinite(price) ? price : undefined,
+    features,
   };
 }
 
-async function fetchItems(
+/**
+ * Item sheets for the given ids. GET /items has no public filter on ids, so we
+ * try `item_ids` first, then a pattern search on each id.
+ */
+export async function fetchItemSheets(
   settings: Settings,
   conn: ResolvedConnection,
+  ids: string[],
   lang: string,
-  query: Record<string, unknown>,
 ): Promise<CatalogItem[]> {
   const features = [
-    settings.featureName,
-    settings.featureColor,
-    settings.featureSize,
-    settings.featureImage,
-    settings.featurePrice,
-  ].filter(Boolean);
-  const result = await authed<{ items?: RawItem[] }>(
-    settings,
-    conn,
-    "/items",
-    {
-      features,
-      fields: ["product_id", "category_ids"],
-      lang,
-      pagination: { limit: settings.catalogLimit || 100, start: 0 },
-      ...query,
-    },
-    true,
+    ...new Set(
+      [
+        settings.featureName,
+        settings.featureColor,
+        settings.featureSize,
+        settings.featureImage,
+        settings.featurePrice,
+        ...splitList(settings.sheetFeatures),
+      ].filter(Boolean),
+    ),
+  ];
+  const query = (body: Record<string, unknown>) =>
+    authed<{ items?: RawItem[] }>(settings, conn, "/items", { features, lang, ...body }, true).then((r) =>
+      (r?.items ?? []).map((raw) => toCatalogItem(raw, settings, lang)),
+    );
+
+  let firstError: unknown;
+  try {
+    const items = await query({ item_ids: ids, pagination: { limit: ids.length, start: 0 } });
+    if (items.length) return items;
+  } catch (error) {
+    firstError = error;
+  }
+  const results = await Promise.allSettled(
+    ids.map((id) =>
+      query({
+        pattern: id,
+        searchable_fields: [{ name: "id", priority: 1 }],
+        pagination: { limit: 10, start: 0 },
+      }).then((items) => items.find((item) => item.id === id)),
+    ),
   );
-  return (result?.items ?? []).map((raw) => toCatalogItem(raw, settings, lang));
-}
-
-/**
- * Loads the ordered item from the catalog, then the items of its category (or,
- * without category, the items sharing its name) and splits them between
- * variants of the same product and substitutes from other products.
- */
-export async function loadCatalogEntry(
-  settings: Settings,
-  conn: ResolvedConnection,
-  sku: string,
-  lang: string,
-): Promise<CatalogEntry> {
-  const [item] = await fetchItems(settings, conn, lang, { item_ids: [sku] });
-  if (!item) throw new ApiError("notInCatalog", `Item ${sku} not found in the catalog`);
-
-  const category = item.categoryIds[0];
-  const pool = category
-    ? await fetchItems(settings, conn, lang, { category_id: category })
-    : await fetchItems(settings, conn, lang, {
-        pattern: item.name,
-        searchable_fields: [{ name: settings.featureName, priority: 1 }],
-      });
-
-  const sameProduct = (other: CatalogItem) =>
-    other.id === item.id || (item.productId !== undefined && other.productId === item.productId);
-  const variants = [item, ...pool.filter((x) => x.id !== item.id && sameProduct(x))];
-  const substitutes = pool.filter((x) => !sameProduct(x));
-  return { item, variants, substitutes };
+  const items = results.flatMap((r) => (r.status === "fulfilled" && r.value ? [r.value] : []));
+  if (!items.length) {
+    const rejected = results.find((r): r is PromiseRejectedResult => r.status === "rejected");
+    throw firstError ?? rejected?.reason ?? new ApiError("notInCatalog", "Items not found in the catalog");
+  }
+  return items;
 }
 
 /** Available quantity per item id, summed over the locations of the stock query. */

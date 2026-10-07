@@ -166,9 +166,13 @@ export async function fetchOrder(
   orderId: string,
   featuresLang: string,
 ): Promise<RawOrder> {
-  const features = [settings.featureName, settings.featureColor, settings.featureSize, settings.featureImage].filter(
-    Boolean,
-  );
+  const features = [
+    settings.featureName,
+    settings.featureColor,
+    settings.featureSize,
+    settings.featureImage,
+    settings.featureSubstitution,
+  ].filter(Boolean);
   const fields = [
     "id",
     "state",
@@ -217,6 +221,8 @@ export interface Article {
   quantity: number;
   state: string;
   eligible: boolean;
+  /** Substitution item ids listed in the item feature set in Settings. */
+  substitutionIds: string[];
 }
 
 function feature(features: Record<string, unknown> | undefined, name: string): string | undefined {
@@ -225,6 +231,20 @@ function feature(features: Record<string, unknown> | undefined, name: string): s
   if (Array.isArray(value)) return value.length ? String(value[0]) : undefined;
   if (value === null || value === undefined || value === "") return undefined;
   return String(value);
+}
+
+/** Ids listed in an item feature: an array and/or a string separated by , ; | or spaces. */
+export function parseIdList(value: unknown): string[] {
+  const values = Array.isArray(value) ? value.flat(2) : [value];
+  return [
+    ...new Set(
+      values
+        .filter((v) => v !== undefined && v !== null)
+        .flatMap((v) => String(v).split(/[,;|\s]+/))
+        .map((v) => v.trim())
+        .filter(Boolean),
+    ),
+  ];
 }
 
 export function toArticles(order: RawOrder, settings: Settings): Article[] {
@@ -256,6 +276,9 @@ export function toArticles(order: RawOrder, settings: Settings): Article[] {
       quantity,
       state,
       eligible: eligibleStates.has(state.toLowerCase()),
+      substitutionIds: settings.featureSubstitution
+        ? parseIdList(features[settings.featureSubstitution]).filter((id) => id !== itemId)
+        : [],
     };
   };
 

@@ -103,17 +103,15 @@ export function ExchangeWorkflow({
     }),
     [settings.returnReasons, settings.exchangeReasons, t],
   );
-  const sizes = useMemo(() => splitList(settings.exchangeSizes), [settings.exchangeSizes]);
-  const colors = useMemo(() => splitList(settings.exchangeColors), [settings.exchangeColors]);
 
   const eligible = articles.filter((a) => a.eligible);
   const notEligible = articles.filter((a) => !a.eligible);
   const selected = articles.filter((a) => selectedIds.includes(a.id));
 
-  // Load catalog + stock as soon as an item is set to "exchange".
+  // Load stock + substitute sheets as soon as an item is set to "exchange".
   const { ensure } = catalog;
   useEffect(() => {
-    for (const a of selected) if (configs[a.id]?.action === "exchange") ensure(a.sku);
+    for (const a of selected) if (configs[a.id]?.action === "exchange") ensure(a);
   }, [selected, configs, ensure]);
 
   const toggle = (id: string) => {
@@ -149,14 +147,7 @@ export function ExchangeWorkflow({
           reason: c.reason,
           ...(c.action === "exchange"
             ? c.exchangeType === "same_model"
-              ? {
-                  exchange: {
-                    type: c.exchangeType,
-                    item_id: c.exchangeItemId,
-                    size: c.exchangeSize ?? a.size,
-                    color: c.exchangeColor ?? a.color,
-                  },
-                }
+              ? { exchange: { type: c.exchangeType, item_id: a.sku } }
               : { exchange: { type: c.exchangeType, item_id: c.exchangeArticleSku, price: c.exchangePrice } }
             : {}),
         };
@@ -247,9 +238,6 @@ export function ExchangeWorkflow({
                   choice={c}
                   onChange={(patch) => update(a.id, patch)}
                   state={catalog.entries[a.sku]}
-                  fallbackSizes={sizes}
-                  fallbackColors={colors}
-                  orderArticles={articles}
                 />
               )}
             </div>
