@@ -45,18 +45,24 @@ export default function App() {
   }, [contextWaitOver]);
   const ready = context.received || contextWaitOver;
 
+  const baseUrl = resolveBaseUrl(settings, siteId, context.apiUrl);
+  const api = useMemo(
+    () => ({ settings, conn: { siteId, baseUrl }, featuresLang }),
+    [settings, siteId, baseUrl, featuresLang],
+  );
+
   useEffect(() => {
     if (!ready || missing.length) return;
     let cancelled = false;
     setLoad({ status: "loading" });
-    const conn = { siteId, baseUrl: resolveBaseUrl(settings, siteId, context.apiUrl) };
+    const { conn } = api;
     fetchOrder(settings, conn, orderId, featuresLang)
       .then((order) => !cancelled && setLoad({ status: "loaded", order }))
       .catch((error: unknown) => !cancelled && setLoad({ status: "error", error }));
     return () => {
       cancelled = true;
     };
-  }, [ready, siteId, orderId, settings, context.apiUrl, featuresLang, reloadKey]);
+  }, [ready, api, orderId, reloadKey]);
 
   const reload = useCallback(() => setReloadKey((k) => k + 1), []);
   const articles = useMemo(() => (load.status === "loaded" ? toArticles(load.order, settings) : []), [load, settings]);
@@ -64,72 +70,52 @@ export default function App() {
   return (
     <I18nProvider language={language} locale={locale}>
       <div className="min-h-screen flex flex-col">
-        <header className="bg-white border-b border-gray-100">
-          <div className="max-w-2xl mx-auto px-4 flex items-center justify-between">
-            <nav className="flex gap-4">
-              {(
-                [
-                  ["exchange", "tabs.exchange"],
-                  ["settings", "tabs.settings"],
-                ] as const
-              ).map(([id, label]) => (
-                <button
-                  key={id}
-                  onClick={() => setTab(id)}
-                  className={`py-3 text-[13px] font-bold border-b-2 transition-colors ${
-                    tab === id ? "border-brand text-gray-800" : "border-transparent text-gray-400 hover:text-gray-600"
-                  }`}
-                >
-                  {t(label)}
-                </button>
-              ))}
-            </nav>
-            <div className="text-[11px] text-gray-400 truncate">
-              {siteId || t("header.noSite")} · {orderId || t("header.noOrder")}
-            </div>
-          </div>
-        </header>
-
-        {tab === "settings" ? (
+        {tab === "settings" && (
           <SettingsPanel
             settings={settings}
             context={context}
             onSave={save}
+            onClose={() => setTab("exchange")}
             onTest={() => {
               reload();
               setTab("exchange");
             }}
           />
-        ) : missing.length ? (
-          <Notice
-            tone="warning"
-            text={t("app.missing", { what: missing.join(` ${t("app.and")} `) })}
-            action={t("app.openSettings")}
-            onAction={() => setTab("settings")}
-          />
-        ) : load.status === "error" ? (
-          <Notice
-            tone="error"
-            text={<ErrorMessage error={load.error} i18n={i18n} useProxy={settings.useProxy} />}
-            action={t("app.openSettings")}
-            onAction={() => setTab("settings")}
-            secondary={t("app.retry")}
-            onSecondary={reload}
-          />
-        ) : load.status === "loaded" ? (
-          <ExchangeWorkflow
-            key={`${load.order.id}-${reloadKey}`}
-            order={load.order}
-            articles={articles}
-            settings={settings}
-            onReload={reload}
-          />
-        ) : (
-          <div className="flex-grow flex items-center justify-center py-16 text-[13px] text-gray-400">
-            <div className="w-5 h-5 border-2 border-brand border-t-transparent rounded-full animate-spin mr-3" />
-            {ready ? t("app.loading", { order: orderId }) : t("app.waiting")}
-          </div>
         )}
+        {/* The workflow stays mounted (hidden) while Settings is open, to keep its progress. */}
+        <div className={tab === "settings" ? "hidden" : "contents"}>
+          {missing.length ? (
+            <Notice
+              tone="warning"
+              text={t("app.missing", { what: missing.join(` ${t("app.and")} `) })}
+              action={t("app.openSettings")}
+              onAction={() => setTab("settings")}
+            />
+          ) : load.status === "error" ? (
+            <Notice
+              tone="error"
+              text={<ErrorMessage error={load.error} i18n={i18n} useProxy={settings.useProxy} />}
+              action={t("app.openSettings")}
+              onAction={() => setTab("settings")}
+              secondary={t("app.retry")}
+              onSecondary={reload}
+            />
+          ) : load.status === "loaded" ? (
+            <ExchangeWorkflow
+              key={`${load.order.id}-${reloadKey}`}
+              order={load.order}
+              articles={articles}
+              api={api}
+              onReload={reload}
+              onOpenSettings={() => setTab("settings")}
+            />
+          ) : (
+            <div className="flex-grow flex items-center justify-center py-16 text-[13px] text-gray-400">
+              <div className="w-5 h-5 border-2 border-brand border-t-transparent rounded-full animate-spin mr-3" />
+              {ready ? t("app.loading", { order: orderId }) : t("app.waiting")}
+            </div>
+          )}
+        </div>
       </div>
     </I18nProvider>
   );
@@ -183,7 +169,7 @@ function Notice({
       <div className="flex gap-2 mt-3">
         <button
           onClick={onAction}
-          className="px-4 py-2 bg-brand text-white text-[13px] font-bold rounded-lg hover:bg-brand-dark"
+          className="px-4 py-2 bg-brand text-white text-[14px] font-bold rounded-lg hover:bg-brand-dark"
         >
           {action}
         </button>

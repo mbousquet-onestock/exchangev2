@@ -1,18 +1,16 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useI18n, type MessageKey } from "../lib/i18n";
 import type { Article, RawOrder } from "../lib/onestock";
-import { splitList, type Settings } from "../lib/settings";
+import { splitList } from "../lib/settings";
+import { useCatalog, type ApiContext } from "../lib/useCatalog";
 import { ArticleCard } from "./ArticleCard";
+import { ExchangeOptions, type ExchangeChoice } from "./ExchangeOptions";
 import { Step, StepIndicator } from "./StepIndicator";
 import { CheckIcon, FieldLabel, InfoBanner, ItemImage, inputClass, selectClass } from "./ui";
 
-interface ItemConfig {
+interface ItemConfig extends ExchangeChoice {
   action: "return" | "exchange";
   reason: string;
-  exchangeType: "same_model" | "different_model";
-  exchangeSize?: string;
-  exchangeColor?: string;
-  exchangeArticleSku?: string;
 }
 
 interface Contact {
@@ -78,19 +76,22 @@ function contactFromOrder(order: RawOrder): Contact {
 export function ExchangeWorkflow({
   order,
   articles,
-  settings,
+  api,
   onReload,
+  onOpenSettings,
 }: {
   order: RawOrder;
   articles: Article[];
-  settings: Settings;
+  api: ApiContext;
   onReload: () => void;
+  onOpenSettings: () => void;
 }) {
+  const { settings } = api;
+  const catalog = useCatalog(api);
   const [step, setStep] = useState<Step>(Step.Selection);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [configs, setConfigs] = useState<Record<string, ItemConfig>>({});
   const [method, setMethod] = useState("");
-  const [search, setSearch] = useState("");
   const [contact, setContact] = useState<Contact>(() => contactFromOrder(order));
 
   const { t, rich, formatPrice } = useI18n();
@@ -108,8 +109,12 @@ export function ExchangeWorkflow({
   const eligible = articles.filter((a) => a.eligible);
   const notEligible = articles.filter((a) => !a.eligible);
   const selected = articles.filter((a) => selectedIds.includes(a.id));
-  // Candidate replacement articles for a "different model" exchange: distinct SKUs of the order.
-  const catalog = useMemo(() => [...new Map(articles.map((a) => [a.sku, a])).values()], [articles]);
+
+  // Load catalog + stock as soon as an item is set to "exchange".
+  const { ensure } = catalog;
+  useEffect(() => {
+    for (const a of selected) if (configs[a.id]?.action === "exchange") ensure(a.sku);
+  }, [selected, configs, ensure]);
 
   const toggle = (id: string) => {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -119,8 +124,10 @@ export function ExchangeWorkflow({
         : { ...prev, [id]: { action: "return", reason: reasons.return[0] ?? "", exchangeType: "same_model" } },
     );
   };
-  const update = (id: string, patch: Partial<ItemConfig>) =>
-    setConfigs((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }));
+  const update = useCallback(
+    (id: string, patch: Partial<ItemConfig>) => setConfigs((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } })),
+    [],
+  );
 
   const canGoNext = !(step === Step.Selection && selectedIds.length === 0) && !(step === Step.Method && !method);
   const next = () => canGoNext && setStep((s) => s + 1);
@@ -143,9 +150,14 @@ export function ExchangeWorkflow({
           ...(c.action === "exchange"
             ? c.exchangeType === "same_model"
               ? {
-                  exchange: { type: c.exchangeType, size: c.exchangeSize ?? a.size, color: c.exchangeColor ?? a.color },
+                  exchange: {
+                    type: c.exchangeType,
+                    item_id: c.exchangeItemId,
+                    size: c.exchangeSize ?? a.size,
+                    color: c.exchangeColor ?? a.color,
+                  },
                 }
-              : { exchange: { type: c.exchangeType, item_id: c.exchangeArticleSku } }
+              : { exchange: { type: c.exchangeType, item_id: c.exchangeArticleSku, price: c.exchangePrice } }
             : {}),
         };
       }),
@@ -183,14 +195,6 @@ export function ExchangeWorkflow({
       {selected.map((a) => {
         const c = configs[a.id];
         const actionReasons = reasons[c.action];
-        const replacement = c.exchangeArticleSku ? catalog.find((x) => x.sku === c.exchangeArticleSku) : undefined;
-        const candidates = catalog.filter(
-          (x) =>
-            x.sku !== a.sku &&
-            (x.name.toLowerCase().includes(search.toLowerCase()) || x.sku.toLowerCase().includes(search.toLowerCase())),
-        );
-        const sizeOptions = a.size && !sizes.includes(a.size) ? [a.size, ...sizes] : sizes;
-        const colorOptions = a.color && !colors.includes(a.color) ? [a.color, ...colors] : colors;
         return (
           <div key={a.id} className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
             <div className="flex items-center p-2.5 border-b border-gray-100 bg-gray-50/50">
@@ -238,100 +242,15 @@ export function ExchangeWorkflow({
                 </select>
               </div>
               {c.action === "exchange" && (
-                <div className="space-y-3 pt-1 border-t border-gray-100 mt-1">
-                  <div className="flex p-1 bg-gray-100 rounded-md">
-                    {(
-                      [
-                        ["same_model", "config.sameModel"],
-                        ["different_model", "config.differentModel"],
-                      ] as const
-                    ).map(([type, label]) => (
-                      <button
-                        key={type}
-                        onClick={() => update(a.id, { exchangeType: type })}
-                        className={`flex-1 py-1 text-[11px] font-bold rounded transition-all ${
-                          c.exchangeType === type ? "bg-white shadow-sm text-brand" : "text-gray-500"
-                        }`}
-                      >
-                        {t(label)}
-                      </button>
-                    ))}
-                  </div>
-                  {c.exchangeType === "same_model" ? (
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <FieldLabel>{t("config.size")}</FieldLabel>
-                        <select
-                          className={selectClass}
-                          value={c.exchangeSize ?? a.size ?? ""}
-                          onChange={(e) => update(a.id, { exchangeSize: e.target.value })}
-                        >
-                          {!a.size && <option value="">—</option>}
-                          {sizeOptions.map((s) => (
-                            <option key={s} value={s}>
-                              {s}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div className="space-y-1">
-                        <FieldLabel>{t("config.color")}</FieldLabel>
-                        <select
-                          className={selectClass}
-                          value={c.exchangeColor ?? a.color ?? ""}
-                          onChange={(e) => update(a.id, { exchangeColor: e.target.value })}
-                        >
-                          {!a.color && <option value="">—</option>}
-                          {colorOptions.map((s) => (
-                            <option key={s} value={s}>
-                              {s}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <input
-                        type="text"
-                        placeholder={t("config.search")}
-                        className={inputClass}
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                      />
-                      <div className="grid grid-cols-1 gap-1.5 max-h-[160px] overflow-y-auto pr-1">
-                        {candidates.length > 0 ? (
-                          candidates.map((x) => (
-                            <div
-                              key={x.sku}
-                              onClick={() => update(a.id, { exchangeArticleSku: x.sku })}
-                              className={`flex items-center p-1.5 border rounded-md cursor-pointer transition-all ${
-                                c.exchangeArticleSku === x.sku
-                                  ? "border-brand bg-brand/5"
-                                  : "border-gray-200 hover:border-gray-300"
-                              }`}
-                            >
-                              <ItemImage
-                                src={x.imageUrl}
-                                alt=""
-                                className="w-8 h-8 rounded mr-2.5 border border-gray-100 overflow-hidden"
-                              />
-                              <div className="flex-grow">
-                                <p className="text-[12px] font-bold text-gray-800">{x.name}</p>
-                                <p className="text-[10px] text-gray-500">
-                                  {[x.color, x.size, formatPrice(x.price, x.currency)].filter(Boolean).join(" | ")}
-                                </p>
-                              </div>
-                            </div>
-                          ))
-                        ) : (
-                          <p className="text-center py-2 text-gray-400 text-[11px]">{t("config.noArticles")}</p>
-                        )}
-                      </div>
-                      {replacement && <PriceDifference from={a} to={replacement} />}
-                    </div>
-                  )}
-                </div>
+                <ExchangeOptions
+                  article={a}
+                  choice={c}
+                  onChange={(patch) => update(a.id, patch)}
+                  state={catalog.entries[a.sku]}
+                  fallbackSizes={sizes}
+                  fallbackColors={colors}
+                  orderArticles={articles}
+                />
               )}
             </div>
           </div>
@@ -459,6 +378,28 @@ export function ExchangeWorkflow({
               )}
             </div>
             <div className="flex gap-2">
+              {/* Discreet entry point to the Settings tab, left of Cancel. */}
+              <button
+                onClick={onOpenSettings}
+                title={t("footer.settings")}
+                aria-label={t("footer.settings")}
+                className="w-9 flex items-center justify-center text-gray-300 opacity-0 hover:opacity-100 focus:opacity-100 transition-opacity"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
+                </svg>
+              </button>
               <button
                 onClick={() => {
                   setStep(Step.Selection);
@@ -482,22 +423,5 @@ export function ExchangeWorkflow({
         </footer>
       )}
     </>
-  );
-}
-
-function PriceDifference({ from, to }: { from: Article; to: Article }) {
-  const { t, rich, formatPrice } = useI18n();
-  const diff = to.price - from.price;
-  const tone =
-    diff > 0
-      ? "bg-orange-50 border-orange-100 text-orange-800"
-      : diff < 0
-        ? "bg-green-50 border-green-100 text-green-800"
-        : "bg-gray-50 border-gray-100 text-gray-600";
-  const amount = <strong>{formatPrice(Math.abs(diff), from.currency)}</strong>;
-  return (
-    <div className={`p-2 rounded-md border text-[11px] font-medium leading-tight ${tone}`}>
-      {diff > 0 ? rich("price.payByLink", { amount }) : diff < 0 ? rich("price.refund", { amount }) : t("price.even")}
-    </div>
   );
 }

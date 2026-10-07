@@ -25,11 +25,13 @@ export function SettingsPanel({
   context,
   onSave,
   onTest,
+  onClose,
 }: {
   settings: Settings;
   context: OneStockContext;
   onSave: (s: Settings) => void;
   onTest: () => void;
+  onClose: () => void;
 }) {
   const { t } = useI18n();
   const [draft, setDraft] = useState(settings);
@@ -46,10 +48,12 @@ export function SettingsPanel({
       <input
         type={type}
         className={inputClass}
-        value={draft[key] as string}
+        value={draft[key] as string | number}
         placeholder={placeholder}
         autoComplete="off"
-        onChange={(e) => set(key, e.target.value as never)}
+        onChange={(e) =>
+          set(key, (typeof draft[key] === "number" ? Number(e.target.value) || 0 : e.target.value) as never)
+        }
       />
       {hint && <Hint>{hint}</Hint>}
     </div>
@@ -214,6 +218,15 @@ export function SettingsPanel({
         {text("exchangeColors", "settings.exchangeColors")}
       </Section>
 
+      <Section title="settings.stock">
+        {text("stockRequestName", "settings.stockRequestName", t("settings.stockRequestNameHint"))}
+        {text("stockEndpointIds", "settings.stockEndpointIds", t("settings.stockEndpointIdsHint"))}
+        <div className="grid grid-cols-2 gap-2.5">
+          {text("featurePrice", "settings.featurePrice")}
+          {text("catalogLimit", "settings.catalogLimit", t("settings.catalogLimitHint"), "number")}
+        </div>
+      </Section>
+
       <Section title="settings.reasons">
         <Hint>{t("settings.reasonsHint")}</Hint>
         {text("returnReasons", "settings.returnReasons", undefined, "text", t("reasons.return"))}
@@ -222,15 +235,23 @@ export function SettingsPanel({
 
       <footer className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-3 z-50">
         <div className="max-w-2xl mx-auto flex items-center justify-between gap-2">
-          <button
-            onClick={() => {
-              setDraft({ ...DEFAULT_SETTINGS });
-              setSaved(false);
-            }}
-            className="px-4 py-2 border border-gray-200 text-gray-600 text-[13px] font-bold rounded-lg hover:bg-gray-50"
-          >
-            {t("settings.reset")}
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 border border-gray-200 text-gray-600 text-[13px] font-bold rounded-lg hover:bg-gray-50"
+            >
+              {t("settings.backToExchange")}
+            </button>
+            <button
+              onClick={() => {
+                setDraft({ ...DEFAULT_SETTINGS });
+                setSaved(false);
+              }}
+              className="px-4 py-2 border border-gray-200 text-gray-600 text-[13px] font-bold rounded-lg hover:bg-gray-50"
+            >
+              {t("settings.reset")}
+            </button>
+          </div>
           <div className="flex items-center gap-2">
             {saved && !dirty && <span className="text-[12px] text-brand font-semibold">{t("settings.saved")}</span>}
             <button
