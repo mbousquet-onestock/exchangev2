@@ -19,6 +19,7 @@ export interface OneStockContext {
   apiUrl?: string;
   hostApp?: string;
   lang?: string;
+  locale?: string;
 }
 
 function str(value: unknown): string | undefined {
@@ -62,7 +63,10 @@ export function useOneStockContext(): OneStockContext {
 
     // Keep the iframe height in sync with the content.
     const observer = new ResizeObserver(() => {
-      window.parent.postMessage({ type: "extension_resize", height: document.documentElement.scrollHeight }, parentOrigin);
+      window.parent.postMessage(
+        { type: "extension_resize", height: document.documentElement.scrollHeight },
+        parentOrigin,
+      );
     });
     observer.observe(document.body);
 
@@ -82,6 +86,7 @@ export function useOneStockContext(): OneStockContext {
     userId: str(data?.user_id) ?? urlParams.user_id,
     apiUrl: str(data?.api_url),
     hostApp: str(data?.host_app) ?? urlParams.host_app,
-    lang: urlParams.lang,
+    lang: str(data?.lang) ?? urlParams.lang,
+    locale: str(data?.locale) ?? urlParams.locale,
   };
 }

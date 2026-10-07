@@ -5,11 +5,13 @@ export interface ResolvedConnection {
   baseUrl: string; // includes the API version, no trailing slash
 }
 
+export type ApiErrorCode = "noToken" | "noCredentials" | "network" | "http";
+
 export class ApiError extends Error {
   constructor(
+    readonly code: ApiErrorCode,
     message: string,
-    readonly status?: number,
-    readonly requestId?: string,
+    readonly details: { status?: number; requestId?: string; url?: string } = {},
   ) {
     super(message);
   }
@@ -41,10 +43,7 @@ async function call<T>(
   try {
     response = await fetch(target, { method: "POST", headers, body: JSON.stringify(body) });
   } catch (error) {
-    throw new ApiError(
-      `Network error calling ${url}: ${(error as Error).message}. ` +
-        (settings.useProxy ? "" : "This is often a CORS issue — try enabling the proxy in Settings."),
-    );
+    throw new ApiError("network", (error as Error).message, { url });
   }
 
   const text = await response.text();
@@ -60,9 +59,9 @@ async function call<T>(
         ? ((payload as Record<string, unknown>).message ?? (payload as Record<string, unknown>).error ?? text)
         : text;
     throw new ApiError(
-      `HTTP ${response.status} on ${new URL(url).pathname}: ${String(detail || response.statusText)}`,
-      response.status,
-      response.headers.get("request-id") ?? undefined,
+      "http",
+      `HTTP ${response.status} — ${new URL(url).pathname}: ${String(detail || response.statusText)}`,
+      { status: response.status, requestId: response.headers.get("request-id") ?? undefined, url },
     );
   }
   return payload as T;
@@ -72,11 +71,11 @@ let cachedToken: { key: string; token: string } | null = null;
 
 export async function getToken(settings: Settings, conn: ResolvedConnection, forceRefresh = false): Promise<string> {
   if (settings.authMode === "token") {
-    if (!settings.token) throw new ApiError("No API token configured. Fill it in the Settings tab.");
+    if (!settings.token) throw new ApiError("noToken", "No API token configured");
     return settings.token;
   }
   if (!settings.userId || !settings.password) {
-    throw new ApiError("Login / password missing. Fill them in the Settings tab.");
+    throw new ApiError("noCredentials", "Login / password missing");
   }
   const key = `${conn.baseUrl}|${conn.siteId}|${settings.userId}`;
   if (!forceRefresh && cachedToken?.key === key) return cachedToken.token;
@@ -104,7 +103,8 @@ async function authed<T>(
     return await run(false);
   } catch (error) {
     // Expired token: log in again once when using credentials.
-    if (error instanceof ApiError && error.status === 401 && settings.authMode === "credentials") return run(true);
+    if (error instanceof ApiError && error.details.status === 401 && settings.authMode === "credentials")
+      return run(true);
     throw error;
   }
 }
@@ -160,7 +160,12 @@ export interface RawLineItemGroup {
   item?: { features?: Record<string, unknown> };
 }
 
-export async function fetchOrder(settings: Settings, conn: ResolvedConnection, orderId: string): Promise<RawOrder> {
+export async function fetchOrder(
+  settings: Settings,
+  conn: ResolvedConnection,
+  orderId: string,
+  featuresLang: string,
+): Promise<RawOrder> {
   const features = [settings.featureName, settings.featureColor, settings.featureSize, settings.featureImage].filter(
     Boolean,
   );
@@ -187,7 +192,7 @@ export async function fetchOrder(settings: Settings, conn: ResolvedConnection, o
     settings,
     conn,
     `/orders/${encodeURIComponent(orderId)}`,
-    { fields, item_features_lang: settings.itemFeaturesLang },
+    { fields, item_features_lang: featuresLang },
     true,
   );
   return "order" in result && result.order ? result.order : (result as RawOrder);
@@ -207,6 +212,7 @@ export interface Article {
   size?: string;
   imageUrl?: string;
   price: number;
+  /** ISO 4217 code, formatted by the UI according to the locale. */
   currency: string;
   quantity: number;
   state: string;
@@ -219,12 +225,6 @@ function feature(features: Record<string, unknown> | undefined, name: string): s
   if (Array.isArray(value)) return value.length ? String(value[0]) : undefined;
   if (value === null || value === undefined || value === "") return undefined;
   return String(value);
-}
-
-const CURRENCY_SYMBOLS: Record<string, string> = { EUR: "€", GBP: "£", USD: "$" };
-
-export function currencySymbol(code: string): string {
-  return CURRENCY_SYMBOLS[code.toUpperCase()] ?? `${code} `;
 }
 
 export function toArticles(order: RawOrder, settings: Settings): Article[] {
@@ -252,7 +252,7 @@ export function toArticles(order: RawOrder, settings: Settings): Article[] {
       size: feature(features, settings.featureSize),
       imageUrl: feature(features, settings.featureImage),
       price: unit,
-      currency: currencySymbol(oi?.pricing_details?.currency ?? orderCurrency),
+      currency: (oi?.pricing_details?.currency ?? orderCurrency).toUpperCase(),
       quantity,
       state,
       eligible: eligibleStates.has(state.toLowerCase()),
@@ -262,7 +262,8 @@ export function toArticles(order: RawOrder, settings: Settings): Article[] {
   const groups = order.line_item_groups ?? [];
   if (groups.length) {
     return groups.map((lig) => {
-      const oi = (lig.order_item_id && byId.get(lig.order_item_id)) || orderItems.find((o) => o.item_id === lig.item_id);
+      const oi =
+        (lig.order_item_id && byId.get(lig.order_item_id)) || orderItems.find((o) => o.item_id === lig.item_id);
       return fromItem(lig.id, oi, lig.item_id, lig.quantity, lig.state ?? order.state ?? "unknown", lig);
     });
   }

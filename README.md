@@ -20,10 +20,16 @@ from the OneStock API and shows the articles eligible for an exchange.
    for price and features). Rows whose state is in *Eligible line states*
    (default `fulfilled`) can be selected for return / exchange; the others are
    listed as not eligible.
-4. **Settings tab** — everything the context doesn't provide: environment /
+4. **Language** (`src/lib/i18n.tsx`) — the interface follows the `lang` (and
+   `locale`, for prices) sent in the context: English, French, Spanish, German
+   and Italian, English as fallback. It can be forced in Settings. Item features
+   are requested in the same language unless set otherwise.
+5. **Reasons** — return and exchange have their own reason lists (switching the
+   action resets the reason). Empty lists in Settings use translated defaults.
+6. **Settings tab** — everything the context doesn't provide: environment /
    base URL, API version, token or login/password, fallback site & order ids
    (to use the app outside OneStock), feature names (name, color, size, image),
-   eligible states, exchange sizes/colors and return reasons. Stored in
+   eligible states, exchange sizes/colors, return and exchange reasons. Stored in
    `localStorage`.
 
 The final step builds the return / exchange request payload (displayed on the

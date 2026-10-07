@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
+import { useI18n, type MessageKey } from "../lib/i18n";
 import type { Article, RawOrder } from "../lib/onestock";
 import { splitList, type Settings } from "../lib/settings";
 import { ArticleCard } from "./ArticleCard";
@@ -25,11 +26,11 @@ interface Contact {
   country: string;
 }
 
-const RETURN_METHODS = [
+const RETURN_METHODS: { id: string; label: MessageKey; description: MessageKey; icon: ReactNode }[] = [
   {
     id: "in-store",
-    label: "In store return",
-    description: "Drop off at any of our retail locations.",
+    label: "method.inStore",
+    description: "method.inStoreDesc",
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path
@@ -43,8 +44,8 @@ const RETURN_METHODS = [
   },
   {
     id: "carrier",
-    label: "Carrier: Standard delivery",
-    description: "Drop off at a carrier access point.",
+    label: "method.carrier",
+    description: "method.carrierDesc",
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path
@@ -92,7 +93,15 @@ export function ExchangeWorkflow({
   const [search, setSearch] = useState("");
   const [contact, setContact] = useState<Contact>(() => contactFromOrder(order));
 
-  const reasons = useMemo(() => splitList(settings.returnReasons), [settings.returnReasons]);
+  const { t, rich, formatPrice } = useI18n();
+  // Return and exchange reasons are distinct lists; empty settings fall back to translated defaults.
+  const reasons = useMemo(
+    () => ({
+      return: splitList(settings.returnReasons || t("reasons.return")),
+      exchange: splitList(settings.exchangeReasons || t("reasons.exchange")),
+    }),
+    [settings.returnReasons, settings.exchangeReasons, t],
+  );
   const sizes = useMemo(() => splitList(settings.exchangeSizes), [settings.exchangeSizes]);
   const colors = useMemo(() => splitList(settings.exchangeColors), [settings.exchangeColors]);
 
@@ -105,7 +114,9 @@ export function ExchangeWorkflow({
   const toggle = (id: string) => {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
     setConfigs((prev) =>
-      prev[id] ? prev : { ...prev, [id]: { action: "return", reason: reasons[0] ?? "", exchangeType: "same_model" } },
+      prev[id]
+        ? prev
+        : { ...prev, [id]: { action: "return", reason: reasons.return[0] ?? "", exchangeType: "same_model" } },
     );
   };
   const update = (id: string, patch: Partial<ItemConfig>) =>
@@ -131,7 +142,9 @@ export function ExchangeWorkflow({
           reason: c.reason,
           ...(c.action === "exchange"
             ? c.exchangeType === "same_model"
-              ? { exchange: { type: c.exchangeType, size: c.exchangeSize ?? a.size, color: c.exchangeColor ?? a.color } }
+              ? {
+                  exchange: { type: c.exchangeType, size: c.exchangeSize ?? a.size, color: c.exchangeColor ?? a.color },
+                }
               : { exchange: { type: c.exchangeType, item_id: c.exchangeArticleSku } }
             : {}),
         };
@@ -142,12 +155,9 @@ export function ExchangeWorkflow({
 
   const renderSelection = () => (
     <div className="space-y-2">
-      <InfoBanner text={`Order ${order.id} — select items to return or exchange`} />
+      <InfoBanner text={t("selection.banner", { order: order.id })} />
       {eligible.length === 0 && (
-        <InfoBanner
-          tone="warning"
-          text={`No item of this order is eligible (eligible states: ${settings.eligibleStates || "none"}).`}
-        />
+        <InfoBanner tone="warning" text={t("selection.noneEligible", { states: settings.eligibleStates || "—" })} />
       )}
       {eligible.map((a) => (
         <ArticleCard key={a.id} article={a} isSelected={selectedIds.includes(a.id)} onToggle={toggle} />
@@ -155,7 +165,7 @@ export function ExchangeWorkflow({
       {notEligible.length > 0 && (
         <details className="pt-2">
           <summary className="text-[12px] font-semibold text-gray-500 cursor-pointer select-none">
-            {notEligible.length} item(s) not eligible for exchange
+            {t("selection.notEligible", { count: notEligible.length })}
           </summary>
           <div className="mt-2">
             {notEligible.map((a) => (
@@ -169,9 +179,10 @@ export function ExchangeWorkflow({
 
   const renderConfiguration = () => (
     <div className="space-y-4">
-      <InfoBanner text="Choose your return or exchange options" />
+      <InfoBanner text={t("config.banner")} />
       {selected.map((a) => {
         const c = configs[a.id];
+        const actionReasons = reasons[c.action];
         const replacement = c.exchangeArticleSku ? catalog.find((x) => x.sku === c.exchangeArticleSku) : undefined;
         const candidates = catalog.filter(
           (x) =>
@@ -191,8 +202,7 @@ export function ExchangeWorkflow({
               <div className="flex flex-col">
                 <span className="font-bold text-gray-800 text-[14px]">{a.name}</span>
                 <span className="text-[12px] text-gray-500">
-                  {a.sku} • {a.currency}
-                  {a.price}
+                  {a.sku} • {formatPrice(a.price, a.currency)}
                 </span>
               </div>
             </div>
@@ -201,25 +211,26 @@ export function ExchangeWorkflow({
                 {(["return", "exchange"] as const).map((action) => (
                   <button
                     key={action}
-                    onClick={() => update(a.id, { action })}
-                    className={`flex-1 py-2 px-3 rounded-lg border text-[13px] font-bold transition-all capitalize ${
+                    // Each action has its own reasons: reset to the first one when switching.
+                    onClick={() => action !== c.action && update(a.id, { action, reason: reasons[action][0] ?? "" })}
+                    className={`flex-1 py-2 px-3 rounded-lg border text-[13px] font-bold transition-all ${
                       c.action === action
                         ? "border-brand bg-brand/5 text-brand"
                         : "border-gray-200 text-gray-500 hover:border-gray-300"
                     }`}
                   >
-                    {action}
+                    {t(action === "return" ? "config.return" : "config.exchange")}
                   </button>
                 ))}
               </div>
               <div className="space-y-1">
-                <FieldLabel>Reason</FieldLabel>
+                <FieldLabel>{t(c.action === "return" ? "config.returnReason" : "config.exchangeReason")}</FieldLabel>
                 <select
                   className={selectClass}
                   value={c.reason}
                   onChange={(e) => update(a.id, { reason: e.target.value })}
                 >
-                  {reasons.map((r) => (
+                  {actionReasons.map((r) => (
                     <option key={r} value={r}>
                       {r}
                     </option>
@@ -231,8 +242,8 @@ export function ExchangeWorkflow({
                   <div className="flex p-1 bg-gray-100 rounded-md">
                     {(
                       [
-                        ["same_model", "Same model"],
-                        ["different_model", "Different model"],
+                        ["same_model", "config.sameModel"],
+                        ["different_model", "config.differentModel"],
                       ] as const
                     ).map(([type, label]) => (
                       <button
@@ -242,14 +253,14 @@ export function ExchangeWorkflow({
                           c.exchangeType === type ? "bg-white shadow-sm text-brand" : "text-gray-500"
                         }`}
                       >
-                        {label}
+                        {t(label)}
                       </button>
                     ))}
                   </div>
                   {c.exchangeType === "same_model" ? (
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <FieldLabel>Size</FieldLabel>
+                        <FieldLabel>{t("config.size")}</FieldLabel>
                         <select
                           className={selectClass}
                           value={c.exchangeSize ?? a.size ?? ""}
@@ -264,7 +275,7 @@ export function ExchangeWorkflow({
                         </select>
                       </div>
                       <div className="space-y-1">
-                        <FieldLabel>Color</FieldLabel>
+                        <FieldLabel>{t("config.color")}</FieldLabel>
                         <select
                           className={selectClass}
                           value={c.exchangeColor ?? a.color ?? ""}
@@ -283,7 +294,7 @@ export function ExchangeWorkflow({
                     <div className="space-y-2">
                       <input
                         type="text"
-                        placeholder="Search articles..."
+                        placeholder={t("config.search")}
                         className={inputClass}
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
@@ -308,13 +319,13 @@ export function ExchangeWorkflow({
                               <div className="flex-grow">
                                 <p className="text-[12px] font-bold text-gray-800">{x.name}</p>
                                 <p className="text-[10px] text-gray-500">
-                                  {[x.color, x.size, `${x.currency}${x.price}`].filter(Boolean).join(" | ")}
+                                  {[x.color, x.size, formatPrice(x.price, x.currency)].filter(Boolean).join(" | ")}
                                 </p>
                               </div>
                             </div>
                           ))
                         ) : (
-                          <p className="text-center py-2 text-gray-400 text-[11px]">No articles found.</p>
+                          <p className="text-center py-2 text-gray-400 text-[11px]">{t("config.noArticles")}</p>
                         )}
                       </div>
                       {replacement && <PriceDifference from={a} to={replacement} />}
@@ -331,7 +342,7 @@ export function ExchangeWorkflow({
 
   const renderMethod = () => (
     <div className="space-y-2">
-      <InfoBanner text="Select the return method" />
+      <InfoBanner text={t("method.banner")} />
       {RETURN_METHODS.map((m) => (
         <div
           key={m.id}
@@ -342,8 +353,8 @@ export function ExchangeWorkflow({
         >
           <div className="mr-4 text-gray-400 group-hover:text-brand transition-colors scale-90">{m.icon}</div>
           <div className="flex-grow">
-            <h4 className="text-[14px] font-bold text-gray-800 leading-tight">{m.label}</h4>
-            <p className="text-[12px] text-gray-500 mt-0.5">{m.description}</p>
+            <h4 className="text-[14px] font-bold text-gray-800 leading-tight">{t(m.label)}</h4>
+            <p className="text-[12px] text-gray-500 mt-0.5">{t(m.description)}</p>
           </div>
           <div
             className={`w-[18px] h-[18px] rounded-full border-2 flex items-center justify-center ${
@@ -357,9 +368,9 @@ export function ExchangeWorkflow({
     </div>
   );
 
-  const contactField = (key: keyof Contact, label: string, type = "text") => (
+  const contactField = (key: keyof Contact, label: MessageKey, type = "text") => (
     <div className="space-y-0.5">
-      <FieldLabel>{label}</FieldLabel>
+      <FieldLabel>{t(label)}</FieldLabel>
       <input
         type={type}
         className={inputClass}
@@ -371,21 +382,21 @@ export function ExchangeWorkflow({
 
   const renderValidation = () => (
     <div className="space-y-3">
-      <InfoBanner text="Confirm your contact and shipping details" />
+      <InfoBanner text={t("validation.banner")} />
       <div className="bg-white border border-gray-200 rounded-lg p-3 space-y-2.5 shadow-sm">
         <div className="grid grid-cols-2 gap-2.5">
-          {contactField("firstName", "First Name")}
-          {contactField("lastName", "Last Name")}
+          {contactField("firstName", "field.firstName")}
+          {contactField("lastName", "field.lastName")}
         </div>
         <div className="grid grid-cols-2 gap-2.5">
-          {contactField("email", "Email", "email")}
-          {contactField("phone", "Phone", "tel")}
+          {contactField("email", "field.email", "email")}
+          {contactField("phone", "field.phone", "tel")}
         </div>
-        {contactField("address", "Address")}
+        {contactField("address", "field.address")}
         <div className="grid grid-cols-3 gap-2.5">
-          {contactField("city", "City")}
-          {contactField("zipCode", "Zip")}
-          {contactField("country", "Country")}
+          {contactField("city", "field.city")}
+          {contactField("zipCode", "field.zip")}
+          {contactField("country", "field.country")}
         </div>
       </div>
     </div>
@@ -396,13 +407,15 @@ export function ExchangeWorkflow({
       <div className="w-14 h-14 bg-brand-light text-brand rounded-full flex items-center justify-center mx-auto mb-4">
         <CheckIcon className="w-7 h-7" strokeWidth={3} />
       </div>
-      <h2 className="text-xl font-bold text-gray-800 mb-1">Request prepared!</h2>
+      <h2 className="text-xl font-bold text-gray-800 mb-1">{t("confirm.title")}</h2>
       <p className="text-[13px] text-gray-500 max-w-sm mx-auto mb-4 leading-relaxed">
-        The return / exchange request for order <strong>{order.id}</strong> is ready. Instructions will be sent to{" "}
-        <strong>{contact.email || "the customer"}</strong>.
+        {rich("confirm.text", {
+          order: <strong>{order.id}</strong>,
+          email: <strong>{contact.email || t("confirm.customer")}</strong>,
+        })}
       </p>
       <details className="text-left max-w-xl mx-auto mb-6">
-        <summary className="text-[12px] font-semibold text-gray-500 cursor-pointer">Request payload</summary>
+        <summary className="text-[12px] font-semibold text-gray-500 cursor-pointer">{t("confirm.payload")}</summary>
         <pre className="mt-2 p-3 bg-gray-900 text-gray-100 rounded-lg text-[11px] overflow-auto">
           {JSON.stringify(request, null, 2)}
         </pre>
@@ -417,7 +430,7 @@ export function ExchangeWorkflow({
         }}
         className="px-6 py-2 bg-brand text-white text-[14px] font-bold rounded-lg hover:bg-brand-dark transition-colors"
       >
-        Done
+        {t("confirm.done")}
       </button>
     </div>
   );
@@ -441,7 +454,7 @@ export function ExchangeWorkflow({
                   onClick={back}
                   className="px-4 py-2 border border-gray-200 text-gray-600 text-[13px] font-bold rounded-lg hover:bg-gray-50"
                 >
-                  Back
+                  {t("footer.back")}
                 </button>
               )}
             </div>
@@ -453,7 +466,7 @@ export function ExchangeWorkflow({
                 }}
                 className="px-4 py-2 border border-gray-200 text-gray-600 text-[13px] font-bold rounded-lg hover:bg-gray-50"
               >
-                Cancel
+                {t("footer.cancel")}
               </button>
               <button
                 onClick={next}
@@ -462,7 +475,7 @@ export function ExchangeWorkflow({
                   canGoNext ? "" : "opacity-50 cursor-not-allowed"
                 }`}
               >
-                {step === Step.Validation ? "Confirm" : "Next"}
+                {t(step === Step.Validation ? "footer.confirm" : "footer.next")}
               </button>
             </div>
           </div>
@@ -473,6 +486,7 @@ export function ExchangeWorkflow({
 }
 
 function PriceDifference({ from, to }: { from: Article; to: Article }) {
+  const { t, rich, formatPrice } = useI18n();
   const diff = to.price - from.price;
   const tone =
     diff > 0
@@ -480,29 +494,10 @@ function PriceDifference({ from, to }: { from: Article; to: Article }) {
       : diff < 0
         ? "bg-green-50 border-green-100 text-green-800"
         : "bg-gray-50 border-gray-100 text-gray-600";
+  const amount = <strong>{formatPrice(Math.abs(diff), from.currency)}</strong>;
   return (
     <div className={`p-2 rounded-md border text-[11px] font-medium leading-tight ${tone}`}>
-      {diff > 0 ? (
-        <>
-          A <strong>pay-by-link</strong> for{" "}
-          <strong>
-            {from.currency}
-            {diff.toFixed(2)}
-          </strong>{" "}
-          will be sent to complete the order.
-        </>
-      ) : diff < 0 ? (
-        <>
-          A refund of{" "}
-          <strong>
-            {from.currency}
-            {(-diff).toFixed(2)}
-          </strong>{" "}
-          will be issued to the original payment method.
-        </>
-      ) : (
-        <>No additional payment or refund required for this exchange.</>
-      )}
+      {diff > 0 ? rich("price.payByLink", { amount }) : diff < 0 ? rich("price.refund", { amount }) : t("price.even")}
     </div>
   );
 }

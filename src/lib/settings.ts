@@ -1,9 +1,14 @@
 import { useCallback, useState } from "react";
+import type { Language } from "./i18n";
 
 export type Environment = "qualif" | "production" | "custom";
 export type AuthMode = "token" | "credentials";
 
 export interface Settings {
+  /** Bumped when stored defaults change meaning (see load()). */
+  version: number;
+  /** "auto" follows the lang sent by OneStock in the extension context. */
+  uiLanguage: "auto" | Language;
   /** Which OneStock API host to target. */
   environment: Environment;
   /** Base URL used when environment is "custom" (without the version). */
@@ -20,6 +25,7 @@ export interface Settings {
   /** Fallback values when the app is opened outside of OneStock (no context). */
   siteIdOverride: string;
   orderIdOverride: string;
+  /** Empty = interface language. */
   itemFeaturesLang: string;
   /** Item feature names used to display articles. */
   featureName: string;
@@ -31,10 +37,16 @@ export interface Settings {
   /** Proposed values for a same-model exchange (comma separated). */
   exchangeSizes: string;
   exchangeColors: string;
+  /** Comma separated; empty = default reasons in the interface language. */
   returnReasons: string;
+  exchangeReasons: string;
 }
 
+const SETTINGS_VERSION = 2;
+
 export const DEFAULT_SETTINGS: Settings = {
+  version: SETTINGS_VERSION,
+  uiLanguage: "auto",
   environment: "qualif",
   customBaseUrl: "",
   useContextApiUrl: true,
@@ -46,7 +58,7 @@ export const DEFAULT_SETTINGS: Settings = {
   useProxy: true,
   siteIdOverride: "",
   orderIdOverride: "",
-  itemFeaturesLang: "en",
+  itemFeaturesLang: "",
   featureName: "name",
   featureColor: "color",
   featureSize: "size",
@@ -54,7 +66,8 @@ export const DEFAULT_SETTINGS: Settings = {
   eligibleStates: "fulfilled",
   exchangeSizes: "XS, S, M, L, XL",
   exchangeColors: "Black, Grey, White, Navy, Red",
-  returnReasons: "Too small, Too big, Damaged item, Color not as expected, Style doesn't suit me, Changed my mind",
+  returnReasons: "",
+  exchangeReasons: "",
 };
 
 const STORAGE_KEY = "onestock-exchange-settings";
@@ -62,7 +75,15 @@ const STORAGE_KEY = "onestock-exchange-settings";
 function load(): Settings {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
+    if (raw) {
+      const stored = JSON.parse(raw);
+      if (!stored.version) {
+        // v1 stored English defaults: drop them so the context language applies.
+        delete stored.returnReasons;
+        delete stored.itemFeaturesLang;
+      }
+      return { ...DEFAULT_SETTINGS, ...stored, version: SETTINGS_VERSION };
+    }
   } catch {
     // storage unavailable or corrupted: fall back to defaults
   }

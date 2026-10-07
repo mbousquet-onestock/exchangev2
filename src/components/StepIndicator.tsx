@@ -1,3 +1,4 @@
+import { useI18n, type MessageKey } from "../lib/i18n";
 import { CheckIcon } from "./ui";
 
 export enum Step {
@@ -8,14 +9,15 @@ export enum Step {
   Confirmation = 5,
 }
 
-const STEPS = [
-  { id: Step.Selection, label: "Items" },
-  { id: Step.Configuration, label: "Options" },
-  { id: Step.Method, label: "Method" },
-  { id: Step.Validation, label: "Validation" },
+const STEPS: { id: Step; label: MessageKey }[] = [
+  { id: Step.Selection, label: "steps.items" },
+  { id: Step.Configuration, label: "steps.options" },
+  { id: Step.Method, label: "steps.method" },
+  { id: Step.Validation, label: "steps.validation" },
 ];
 
 export function StepIndicator({ currentStep }: { currentStep: Step }) {
+  const { t } = useI18n();
   return (
     <div className="w-full py-3 mb-2 border-b border-gray-100 bg-white">
       <div className="max-w-xl mx-auto flex items-center justify-between px-4 relative">
@@ -46,7 +48,7 @@ export function StepIndicator({ currentStep }: { currentStep: Step }) {
                 )}
               </div>
               <span className={`mt-1 text-[11px] font-bold ${active ? "text-[#333]" : "text-gray-400"}`}>
-                {step.label}
+                {t(step.label)}
               </span>
             </div>
           );

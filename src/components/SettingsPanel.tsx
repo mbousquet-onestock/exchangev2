@@ -1,14 +1,16 @@
 import { useState, type ReactNode } from "react";
 import type { OneStockContext } from "../lib/context";
+import { LANGUAGES, useI18n, type MessageKey } from "../lib/i18n";
 import { resolveBaseUrl } from "../lib/onestock";
 import type { Settings } from "../lib/settings";
 import { DEFAULT_SETTINGS } from "../lib/settings";
 import { FieldLabel, InfoBanner, inputClass, selectClass } from "./ui";
 
-function Section({ title, children }: { title: string; children: ReactNode }) {
+function Section({ title, children }: { title: MessageKey; children: ReactNode }) {
+  const { t } = useI18n();
   return (
     <section className="bg-white border border-gray-200 rounded-lg shadow-sm">
-      <h3 className="px-3 py-2 border-b border-gray-100 text-[13px] font-bold text-gray-700">{title}</h3>
+      <h3 className="px-3 py-2 border-b border-gray-100 text-[13px] font-bold text-gray-700">{t(title)}</h3>
       <div className="p-3 space-y-3">{children}</div>
     </section>
   );
@@ -29,6 +31,7 @@ export function SettingsPanel({
   onSave: (s: Settings) => void;
   onTest: () => void;
 }) {
+  const { t } = useI18n();
   const [draft, setDraft] = useState(settings);
   const [saved, setSaved] = useState(false);
   const dirty = JSON.stringify(draft) !== JSON.stringify(settings);
@@ -37,9 +40,9 @@ export function SettingsPanel({
     setSaved(false);
     setDraft((d) => ({ ...d, [key]: value }));
   };
-  const text = (key: keyof Settings, label: string, hint?: ReactNode, type = "text", placeholder?: string) => (
+  const text = (key: keyof Settings, label: MessageKey, hint?: ReactNode, type = "text", placeholder?: string) => (
     <div className="space-y-0.5">
-      <FieldLabel>{label}</FieldLabel>
+      <FieldLabel>{t(label)}</FieldLabel>
       <input
         type={type}
         className={inputClass}
@@ -51,7 +54,7 @@ export function SettingsPanel({
       {hint && <Hint>{hint}</Hint>}
     </div>
   );
-  const checkbox = (key: keyof Settings, label: string, hint?: ReactNode) => (
+  const checkbox = (key: keyof Settings, label: MessageKey, hint?: ReactNode) => (
     <label className="flex items-start gap-2 cursor-pointer">
       <input
         type="checkbox"
@@ -60,7 +63,7 @@ export function SettingsPanel({
         onChange={(e) => set(key, e.target.checked as never)}
       />
       <span>
-        <span className="text-[13px] font-medium text-gray-700">{label}</span>
+        <span className="text-[13px] font-medium text-gray-700">{t(label)}</span>
         {hint && <Hint>{hint}</Hint>}
       </span>
     </label>
@@ -71,46 +74,58 @@ export function SettingsPanel({
 
   return (
     <main className="max-w-2xl w-full mx-auto px-4 py-4 pb-24 space-y-4">
-      <InfoBanner text="Settings are stored in this browser only (localStorage)." />
+      <InfoBanner text={t("settings.stored")} />
 
-      <Section title="OneStock context">
+      <Section title="settings.context">
         <div className="grid grid-cols-2 gap-2 text-[12px]">
-          <ContextRow label="Mode" value={context.embedded ? "Embedded (iframe)" : "Standalone"} />
-          <ContextRow label="onestock_data" value={context.received ? "received" : "not received"} />
-          <ContextRow label="Site id" value={context.siteId} />
-          <ContextRow label="Order id" value={context.orderId} />
-          <ContextRow label="User id" value={context.userId} />
-          <ContextRow label="Host app" value={context.hostApp} />
-          <ContextRow label="API url" value={context.apiUrl} />
+          <ContextRow
+            label={t("settings.mode")}
+            value={t(context.embedded ? "settings.embedded" : "settings.standalone")}
+          />
+          <ContextRow
+            label="onestock_data"
+            value={t(context.received ? "settings.received" : "settings.notReceived")}
+          />
+          <ContextRow label={t("settings.siteId")} value={context.siteId} />
+          <ContextRow label={t("settings.orderId")} value={context.orderId} />
+          <ContextRow label={t("settings.userId")} value={context.userId} />
+          <ContextRow label={t("settings.hostApp")} value={context.hostApp} />
+          <ContextRow
+            label={t("settings.language")}
+            value={[context.lang, context.locale].filter(Boolean).join(" / ")}
+          />
+          <ContextRow label={t("settings.apiUrl")} value={context.apiUrl} />
         </div>
         <details>
-          <summary className="text-[12px] font-semibold text-gray-500 cursor-pointer">Raw context</summary>
+          <summary className="text-[12px] font-semibold text-gray-500 cursor-pointer">
+            {t("settings.rawContext")}
+          </summary>
           <pre className="mt-2 p-2 bg-gray-50 border border-gray-100 rounded text-[11px] overflow-auto">
             {JSON.stringify({ urlParams: context.urlParams, data: context.data }, null, 2)}
           </pre>
         </details>
         <div className="grid grid-cols-2 gap-2.5">
-          {text("siteIdOverride", "Site id (fallback)", "Used when the context has no site_id.", "text", "c00")}
-          {text("orderIdOverride", "Order id (fallback)", "Used when the context has no order id.", "text", "ORD000001")}
+          {text("siteIdOverride", "settings.siteIdFallback", t("settings.siteIdFallbackHint"), "text", "c00")}
+          {text("orderIdOverride", "settings.orderIdFallback", t("settings.orderIdFallbackHint"), "text", "ORD000001")}
         </div>
       </Section>
 
-      <Section title="API connection">
+      <Section title="settings.connection">
         <div className="grid grid-cols-2 gap-2.5">
           <div className="space-y-0.5">
-            <FieldLabel>Environment</FieldLabel>
+            <FieldLabel>{t("settings.environment")}</FieldLabel>
             <select
               className={selectClass}
               value={draft.environment}
               onChange={(e) => set("environment", e.target.value as Settings["environment"])}
             >
-              <option value="qualif">Qualification</option>
-              <option value="production">Production</option>
-              <option value="custom">Custom URL</option>
+              <option value="qualif">{t("settings.qualif")}</option>
+              <option value="production">{t("settings.production")}</option>
+              <option value="custom">{t("settings.custom")}</option>
             </select>
           </div>
           <div className="space-y-0.5">
-            <FieldLabel>API version</FieldLabel>
+            <FieldLabel>{t("settings.apiVersion")}</FieldLabel>
             <select
               className={selectClass}
               value={draft.apiVersion}
@@ -125,28 +140,24 @@ export function SettingsPanel({
         {draft.environment === "custom" &&
           text(
             "customBaseUrl",
-            "Custom base URL",
-            "Without version. {site_id} is replaced.",
+            "settings.customBaseUrl",
+            t("settings.customBaseUrlHint"),
             "text",
             "https://{site_id}.api.qualif.onestock-retail.com",
           )}
-        {checkbox("useContextApiUrl", "Use the api_url sent by OneStock when available")}
-        {checkbox(
-          "useProxy",
-          "Route calls through the /api/proxy CORS proxy",
-          "Needed when the OneStock API refuses browser calls from this domain.",
-        )}
+        {checkbox("useContextApiUrl", "settings.useContextApiUrl")}
+        {checkbox("useProxy", "settings.useProxy", t("settings.useProxyHint"))}
         <p className="text-[11px] text-gray-500">
-          Resolved base URL: <code className="text-gray-700">{preview}</code>
+          {t("settings.resolvedUrl")} <code className="text-gray-700">{preview}</code>
         </p>
       </Section>
 
-      <Section title="Authentication">
+      <Section title="settings.auth">
         <div className="flex p-1 bg-gray-100 rounded-md">
           {(
             [
-              ["token", "API token"],
-              ["credentials", "Login / password"],
+              ["token", "settings.authToken"],
+              ["credentials", "settings.authCredentials"],
             ] as const
           ).map(([mode, label]) => (
             <button
@@ -156,34 +167,57 @@ export function SettingsPanel({
                 draft.authMode === mode ? "bg-white shadow-sm text-brand" : "text-gray-500"
               }`}
             >
-              {label}
+              {t(label)}
             </button>
           ))}
         </div>
         {draft.authMode === "token" ? (
-          text("token", "Token", "Sent in the body of each request (root-level `token`).", "password")
+          text("token", "settings.token", t("settings.tokenHint"), "password")
         ) : (
           <div className="grid grid-cols-2 gap-2.5">
-            {text("userId", "User id", "A token is requested via POST /login.")}
-            {text("password", "Password", undefined, "password")}
+            {text("userId", "settings.user", t("settings.userHint"))}
+            {text("password", "settings.password", undefined, "password")}
           </div>
         )}
       </Section>
 
-      <Section title="Articles">
+      <Section title="settings.display">
         <div className="grid grid-cols-2 gap-2.5">
-          {text("itemFeaturesLang", "Item features lang")}
-          {text("eligibleStates", "Eligible line states", "Comma separated, e.g. fulfilled, delivered")}
+          <div className="space-y-0.5">
+            <FieldLabel>{t("settings.uiLanguage")}</FieldLabel>
+            <select
+              className={selectClass}
+              value={draft.uiLanguage}
+              onChange={(e) => set("uiLanguage", e.target.value as Settings["uiLanguage"])}
+            >
+              <option value="auto">{t("settings.auto", { lang: context.lang || "—" })}</option>
+              {LANGUAGES.map((l) => (
+                <option key={l} value={l}>
+                  {LANGUAGE_NAMES[l]}
+                </option>
+              ))}
+            </select>
+          </div>
+          {text("itemFeaturesLang", "settings.featuresLang", t("settings.featuresLangHint"))}
         </div>
+      </Section>
+
+      <Section title="settings.articles">
+        {text("eligibleStates", "settings.eligibleStates", t("settings.eligibleStatesHint"))}
         <div className="grid grid-cols-4 gap-2.5">
-          {text("featureName", "Name feature")}
-          {text("featureColor", "Color feature")}
-          {text("featureSize", "Size feature")}
-          {text("featureImage", "Image feature")}
+          {text("featureName", "settings.featureName")}
+          {text("featureColor", "settings.featureColor")}
+          {text("featureSize", "settings.featureSize")}
+          {text("featureImage", "settings.featureImage")}
         </div>
-        {text("exchangeSizes", "Exchange sizes")}
-        {text("exchangeColors", "Exchange colors")}
-        {text("returnReasons", "Return reasons")}
+        {text("exchangeSizes", "settings.exchangeSizes")}
+        {text("exchangeColors", "settings.exchangeColors")}
+      </Section>
+
+      <Section title="settings.reasons">
+        <Hint>{t("settings.reasonsHint")}</Hint>
+        {text("returnReasons", "settings.returnReasons", undefined, "text", t("reasons.return"))}
+        {text("exchangeReasons", "settings.exchangeReasons", undefined, "text", t("reasons.exchange"))}
       </Section>
 
       <footer className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-3 z-50">
@@ -195,10 +229,10 @@ export function SettingsPanel({
             }}
             className="px-4 py-2 border border-gray-200 text-gray-600 text-[13px] font-bold rounded-lg hover:bg-gray-50"
           >
-            Reset defaults
+            {t("settings.reset")}
           </button>
           <div className="flex items-center gap-2">
-            {saved && !dirty && <span className="text-[12px] text-brand font-semibold">Saved</span>}
+            {saved && !dirty && <span className="text-[12px] text-brand font-semibold">{t("settings.saved")}</span>}
             <button
               onClick={() => {
                 onSave(draft);
@@ -207,7 +241,7 @@ export function SettingsPanel({
               }}
               className="px-4 py-2 border border-brand text-brand text-[13px] font-bold rounded-lg hover:bg-brand/5"
             >
-              Save &amp; load order
+              {t("settings.saveAndLoad")}
             </button>
             <button
               onClick={() => {
@@ -219,7 +253,7 @@ export function SettingsPanel({
                 dirty ? "" : "opacity-50 cursor-not-allowed"
               }`}
             >
-              Save
+              {t("settings.save")}
             </button>
           </div>
         </div>
@@ -227,6 +261,14 @@ export function SettingsPanel({
     </main>
   );
 }
+
+const LANGUAGE_NAMES: Record<(typeof LANGUAGES)[number], string> = {
+  en: "English",
+  fr: "Français",
+  es: "Español",
+  de: "Deutsch",
+  it: "Italiano",
+};
 
 function ContextRow({ label, value }: { label: string; value?: string }) {
   return (

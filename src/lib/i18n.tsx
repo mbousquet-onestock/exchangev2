@@ -1,0 +1,554 @@
+import { createContext, Fragment, useContext, useMemo, type ReactNode } from "react";
+
+export const LANGUAGES = ["en", "fr", "es", "de", "it"] as const;
+export type Language = (typeof LANGUAGES)[number];
+
+const en = {
+  "tabs.exchange": "Exchange",
+  "tabs.settings": "Settings",
+  "header.noSite": "no site",
+  "header.noOrder": "no order",
+
+  "steps.items": "Items",
+  "steps.options": "Options",
+  "steps.method": "Method",
+  "steps.validation": "Validation",
+
+  "selection.banner": "Order {order} — select items to return or exchange",
+  "selection.noneEligible": "No item of this order is eligible (eligible states: {states}).",
+  "selection.notEligible": "{count} item(s) not eligible for return or exchange",
+  "article.qty": "Qty {qty}",
+
+  "config.banner": "Choose your return or exchange options",
+  "config.return": "Return",
+  "config.exchange": "Exchange",
+  "config.returnReason": "Return reason",
+  "config.exchangeReason": "Exchange reason",
+  "config.sameModel": "Same model",
+  "config.differentModel": "Different model",
+  "config.size": "Size",
+  "config.color": "Color",
+  "config.search": "Search articles...",
+  "config.noArticles": "No articles found.",
+  "price.payByLink": "A pay-by-link for {amount} will be sent to complete the order.",
+  "price.refund": "A refund of {amount} will be issued to the original payment method.",
+  "price.even": "No additional payment or refund required for this exchange.",
+
+  "method.banner": "Select the return method",
+  "method.inStore": "In store return",
+  "method.inStoreDesc": "Drop off at any of our retail locations.",
+  "method.carrier": "Carrier: Standard delivery",
+  "method.carrierDesc": "Drop off at a carrier access point.",
+
+  "validation.banner": "Confirm your contact and shipping details",
+  "field.firstName": "First name",
+  "field.lastName": "Last name",
+  "field.email": "Email",
+  "field.phone": "Phone",
+  "field.address": "Address",
+  "field.city": "City",
+  "field.zip": "Zip",
+  "field.country": "Country",
+
+  "confirm.title": "Request prepared!",
+  "confirm.text": "The return / exchange request for order {order} is ready. Instructions will be sent to {email}.",
+  "confirm.customer": "the customer",
+  "confirm.payload": "Request payload",
+  "confirm.done": "Done",
+
+  "footer.back": "Back",
+  "footer.cancel": "Cancel",
+  "footer.next": "Next",
+  "footer.confirm": "Confirm",
+
+  "app.missing": "Missing {what}: open this page from OneStock or set fallback values in Settings.",
+  "app.siteId": "site id",
+  "app.orderId": "order id",
+  "app.and": "and",
+  "app.openSettings": "Open settings",
+  "app.retry": "Retry",
+  "app.loading": "Loading order {order}…",
+  "app.waiting": "Waiting for OneStock context…",
+
+  "error.noToken": "No API token configured. Fill it in the Settings tab.",
+  "error.noCredentials": "Login / password missing. Fill them in the Settings tab.",
+  "error.network": "Network error calling {url}: {detail}.",
+  "error.networkCors": "This is often a CORS issue — try enabling the proxy in Settings.",
+
+  "settings.stored": "Settings are stored in this browser only (localStorage).",
+  "settings.context": "OneStock context",
+  "settings.mode": "Mode",
+  "settings.embedded": "Embedded (iframe)",
+  "settings.standalone": "Standalone",
+  "settings.received": "received",
+  "settings.notReceived": "not received",
+  "settings.siteId": "Site id",
+  "settings.orderId": "Order id",
+  "settings.userId": "User id",
+  "settings.hostApp": "Host app",
+  "settings.apiUrl": "API url",
+  "settings.language": "Language",
+  "settings.rawContext": "Raw context",
+  "settings.siteIdFallback": "Site id (fallback)",
+  "settings.siteIdFallbackHint": "Used when the context has no site_id.",
+  "settings.orderIdFallback": "Order id (fallback)",
+  "settings.orderIdFallbackHint": "Used when the context has no order id.",
+  "settings.connection": "API connection",
+  "settings.environment": "Environment",
+  "settings.qualif": "Qualification",
+  "settings.production": "Production",
+  "settings.custom": "Custom URL",
+  "settings.apiVersion": "API version",
+  "settings.customBaseUrl": "Custom base URL",
+  "settings.customBaseUrlHint": "Without version. {site_id} is replaced.",
+  "settings.useContextApiUrl": "Use the api_url sent by OneStock when available",
+  "settings.useProxy": "Route calls through the /api/proxy CORS proxy",
+  "settings.useProxyHint": "Needed when the OneStock API refuses browser calls from this domain.",
+  "settings.resolvedUrl": "Resolved base URL:",
+  "settings.auth": "Authentication",
+  "settings.authToken": "API token",
+  "settings.authCredentials": "Login / password",
+  "settings.token": "Token",
+  "settings.tokenHint": "Sent in the body of each request (root-level `token`).",
+  "settings.user": "User id",
+  "settings.userHint": "A token is requested via POST /login.",
+  "settings.password": "Password",
+  "settings.display": "Display",
+  "settings.uiLanguage": "Interface language",
+  "settings.auto": "Automatic (from context: {lang})",
+  "settings.featuresLang": "Item features lang",
+  "settings.featuresLangHint": "Empty = interface language.",
+  "settings.articles": "Articles",
+  "settings.eligibleStates": "Eligible line states",
+  "settings.eligibleStatesHint": "Comma separated, e.g. fulfilled, delivered",
+  "settings.featureName": "Name feature",
+  "settings.featureColor": "Color feature",
+  "settings.featureSize": "Size feature",
+  "settings.featureImage": "Image feature",
+  "settings.exchangeSizes": "Exchange sizes",
+  "settings.exchangeColors": "Exchange colors",
+  "settings.reasons": "Reasons",
+  "settings.returnReasons": "Return reasons",
+  "settings.exchangeReasons": "Exchange reasons",
+  "settings.reasonsHint": "Comma separated. Empty = default reasons translated in the interface language.",
+  "settings.reset": "Reset defaults",
+  "settings.saved": "Saved",
+  "settings.saveAndLoad": "Save & load order",
+  "settings.save": "Save",
+
+  "state.fulfilled": "Fulfilled",
+  "state.returned": "Returned",
+  "state.cancelled": "Cancelled",
+  "state.removed": "Removed",
+  "state.dispatched": "Dispatched",
+  "state.delivered": "Delivered",
+  "state.collected": "Collected",
+  "state.pending": "Pending",
+
+  "reasons.return": "Too small, Too big, Damaged item, Not as described, Arrived too late, Changed my mind",
+  "reasons.exchange": "Wrong size, Wrong color, Damaged item, Style doesn't suit me, Prefer another model",
+};
+
+export type MessageKey = keyof typeof en;
+type Dictionary = Record<MessageKey, string>;
+
+const fr: Dictionary = {
+  "tabs.exchange": "Échange",
+  "tabs.settings": "Paramètres",
+  "header.noSite": "aucun site",
+  "header.noOrder": "aucune commande",
+
+  "steps.items": "Articles",
+  "steps.options": "Options",
+  "steps.method": "Mode",
+  "steps.validation": "Validation",
+
+  "selection.banner": "Commande {order} — sélectionnez les articles à retourner ou échanger",
+  "selection.noneEligible": "Aucun article de cette commande n'est éligible (états éligibles : {states}).",
+  "selection.notEligible": "{count} article(s) non éligible(s) au retour ou à l'échange",
+  "article.qty": "Qté {qty}",
+
+  "config.banner": "Choisissez vos options de retour ou d'échange",
+  "config.return": "Retour",
+  "config.exchange": "Échange",
+  "config.returnReason": "Motif de retour",
+  "config.exchangeReason": "Motif d'échange",
+  "config.sameModel": "Même modèle",
+  "config.differentModel": "Autre modèle",
+  "config.size": "Taille",
+  "config.color": "Couleur",
+  "config.search": "Rechercher un article...",
+  "config.noArticles": "Aucun article trouvé.",
+  "price.payByLink": "Un lien de paiement de {amount} vous sera envoyé pour finaliser la commande.",
+  "price.refund": "Un remboursement de {amount} sera effectué sur le moyen de paiement d'origine.",
+  "price.even": "Aucun paiement ni remboursement supplémentaire pour cet échange.",
+
+  "method.banner": "Sélectionnez le mode de retour",
+  "method.inStore": "Retour en magasin",
+  "method.inStoreDesc": "Déposez l'article dans l'un de nos magasins.",
+  "method.carrier": "Transporteur : livraison standard",
+  "method.carrierDesc": "Déposez le colis dans un point relais du transporteur.",
+
+  "validation.banner": "Confirmez vos coordonnées et votre adresse",
+  "field.firstName": "Prénom",
+  "field.lastName": "Nom",
+  "field.email": "E-mail",
+  "field.phone": "Téléphone",
+  "field.address": "Adresse",
+  "field.city": "Ville",
+  "field.zip": "Code postal",
+  "field.country": "Pays",
+
+  "confirm.title": "Demande préparée !",
+  "confirm.text":
+    "La demande de retour / échange pour la commande {order} est prête. Les instructions seront envoyées à {email}.",
+  "confirm.customer": "le client",
+  "confirm.payload": "Contenu de la demande",
+  "confirm.done": "Terminer",
+
+  "footer.back": "Précédent",
+  "footer.cancel": "Annuler",
+  "footer.next": "Suivant",
+  "footer.confirm": "Confirmer",
+
+  "app.missing":
+    "{what} manquant : ouvrez cette page depuis OneStock ou renseignez des valeurs de secours dans les Paramètres.",
+  "app.siteId": "Site id",
+  "app.orderId": "numéro de commande",
+  "app.and": "et",
+  "app.openSettings": "Ouvrir les paramètres",
+  "app.retry": "Réessayer",
+  "app.loading": "Chargement de la commande {order}…",
+  "app.waiting": "En attente du contexte OneStock…",
+
+  "error.noToken": "Aucun token API configuré. Renseignez-le dans l'onglet Paramètres.",
+  "error.noCredentials": "Identifiant / mot de passe manquants. Renseignez-les dans l'onglet Paramètres.",
+  "error.network": "Erreur réseau lors de l'appel à {url} : {detail}.",
+  "error.networkCors": "C'est souvent un problème de CORS — activez le proxy dans les Paramètres.",
+
+  "settings.stored": "Les paramètres sont stockés uniquement dans ce navigateur (localStorage).",
+  "settings.context": "Contexte OneStock",
+  "settings.mode": "Mode",
+  "settings.embedded": "Intégré (iframe)",
+  "settings.standalone": "Autonome",
+  "settings.received": "reçu",
+  "settings.notReceived": "non reçu",
+  "settings.siteId": "Site id",
+  "settings.orderId": "Commande",
+  "settings.userId": "Utilisateur",
+  "settings.hostApp": "Application hôte",
+  "settings.apiUrl": "URL API",
+  "settings.language": "Langue",
+  "settings.rawContext": "Contexte brut",
+  "settings.siteIdFallback": "Site id (secours)",
+  "settings.siteIdFallbackHint": "Utilisé si le contexte ne fournit pas de site_id.",
+  "settings.orderIdFallback": "Commande (secours)",
+  "settings.orderIdFallbackHint": "Utilisé si le contexte ne fournit pas de commande.",
+  "settings.connection": "Connexion API",
+  "settings.environment": "Environnement",
+  "settings.qualif": "Qualification",
+  "settings.production": "Production",
+  "settings.custom": "URL personnalisée",
+  "settings.apiVersion": "Version API",
+  "settings.customBaseUrl": "URL de base personnalisée",
+  "settings.customBaseUrlHint": "Sans la version. {site_id} est remplacé.",
+  "settings.useContextApiUrl": "Utiliser l'api_url envoyée par OneStock si disponible",
+  "settings.useProxy": "Passer par le proxy CORS /api/proxy",
+  "settings.useProxyHint": "Nécessaire si l'API OneStock refuse les appels navigateur depuis ce domaine.",
+  "settings.resolvedUrl": "URL de base utilisée :",
+  "settings.auth": "Authentification",
+  "settings.authToken": "Token API",
+  "settings.authCredentials": "Identifiant / mot de passe",
+  "settings.token": "Token",
+  "settings.tokenHint": "Envoyé dans le corps de chaque requête (champ `token`).",
+  "settings.user": "Identifiant",
+  "settings.userHint": "Un token est demandé via POST /login.",
+  "settings.password": "Mot de passe",
+  "settings.display": "Affichage",
+  "settings.uiLanguage": "Langue de l'interface",
+  "settings.auto": "Automatique (contexte : {lang})",
+  "settings.featuresLang": "Langue des caractéristiques",
+  "settings.featuresLangHint": "Vide = langue de l'interface.",
+  "settings.articles": "Articles",
+  "settings.eligibleStates": "États de ligne éligibles",
+  "settings.eligibleStatesHint": "Séparés par des virgules, ex. fulfilled, delivered",
+  "settings.featureName": "Caract. nom",
+  "settings.featureColor": "Caract. couleur",
+  "settings.featureSize": "Caract. taille",
+  "settings.featureImage": "Caract. image",
+  "settings.exchangeSizes": "Tailles proposées",
+  "settings.exchangeColors": "Couleurs proposées",
+  "settings.reasons": "Motifs",
+  "settings.returnReasons": "Motifs de retour",
+  "settings.exchangeReasons": "Motifs d'échange",
+  "settings.reasonsHint": "Séparés par des virgules. Vide = motifs par défaut traduits dans la langue de l'interface.",
+  "settings.reset": "Valeurs par défaut",
+  "settings.saved": "Enregistré",
+  "settings.saveAndLoad": "Enregistrer et charger",
+  "settings.save": "Enregistrer",
+
+  "state.fulfilled": "Terminé",
+  "state.returned": "Retourné",
+  "state.cancelled": "Annulé",
+  "state.removed": "Supprimé",
+  "state.dispatched": "Expédié",
+  "state.delivered": "Livré",
+  "state.collected": "Retiré",
+  "state.pending": "En attente",
+
+  "reasons.return":
+    "Trop petit, Trop grand, Article endommagé, Non conforme à la description, Livré trop tard, J'ai changé d'avis",
+  "reasons.exchange":
+    "Mauvaise taille, Mauvaise couleur, Article endommagé, Le style ne me convient pas, Je préfère un autre modèle",
+};
+
+// Other languages translate the customer-facing workflow; anything missing falls back to English.
+const es: Partial<Dictionary> = {
+  "tabs.exchange": "Cambio",
+  "tabs.settings": "Ajustes",
+  "steps.items": "Artículos",
+  "steps.options": "Opciones",
+  "steps.method": "Método",
+  "steps.validation": "Validación",
+  "selection.banner": "Pedido {order} — seleccione los artículos a devolver o cambiar",
+  "selection.noneEligible": "Ningún artículo de este pedido es elegible (estados elegibles: {states}).",
+  "selection.notEligible": "{count} artículo(s) no elegible(s) para devolución o cambio",
+  "article.qty": "Cant. {qty}",
+  "config.banner": "Elija sus opciones de devolución o cambio",
+  "config.return": "Devolución",
+  "config.exchange": "Cambio",
+  "config.returnReason": "Motivo de devolución",
+  "config.exchangeReason": "Motivo de cambio",
+  "config.sameModel": "Mismo modelo",
+  "config.differentModel": "Otro modelo",
+  "config.size": "Talla",
+  "config.color": "Color",
+  "config.search": "Buscar artículos...",
+  "config.noArticles": "No se encontraron artículos.",
+  "price.payByLink": "Se enviará un enlace de pago de {amount} para completar el pedido.",
+  "price.refund": "Se reembolsarán {amount} en el método de pago original.",
+  "price.even": "No se requiere pago ni reembolso adicional para este cambio.",
+  "method.banner": "Seleccione el método de devolución",
+  "method.inStore": "Devolución en tienda",
+  "method.inStoreDesc": "Entréguelo en cualquiera de nuestras tiendas.",
+  "method.carrier": "Transportista: entrega estándar",
+  "method.carrierDesc": "Entréguelo en un punto de recogida del transportista.",
+  "validation.banner": "Confirme sus datos de contacto y envío",
+  "field.firstName": "Nombre",
+  "field.lastName": "Apellido",
+  "field.email": "Correo electrónico",
+  "field.phone": "Teléfono",
+  "field.address": "Dirección",
+  "field.city": "Ciudad",
+  "field.zip": "Código postal",
+  "field.country": "País",
+  "confirm.title": "¡Solicitud preparada!",
+  "confirm.text":
+    "La solicitud de devolución / cambio del pedido {order} está lista. Las instrucciones se enviarán a {email}.",
+  "confirm.customer": "el cliente",
+  "confirm.done": "Hecho",
+  "footer.back": "Atrás",
+  "footer.cancel": "Cancelar",
+  "footer.next": "Siguiente",
+  "footer.confirm": "Confirmar",
+  "app.loading": "Cargando el pedido {order}…",
+  "state.fulfilled": "Completado",
+  "state.returned": "Devuelto",
+  "state.cancelled": "Cancelado",
+  "state.delivered": "Entregado",
+  "reasons.return":
+    "Demasiado pequeño, Demasiado grande, Artículo dañado, No coincide con la descripción, Llegó tarde, He cambiado de opinión",
+  "reasons.exchange":
+    "Talla incorrecta, Color incorrecto, Artículo dañado, El estilo no me convence, Prefiero otro modelo",
+};
+
+const de: Partial<Dictionary> = {
+  "tabs.exchange": "Umtausch",
+  "tabs.settings": "Einstellungen",
+  "steps.items": "Artikel",
+  "steps.options": "Optionen",
+  "steps.method": "Methode",
+  "steps.validation": "Bestätigung",
+  "selection.banner": "Bestellung {order} — Artikel für Rücksendung oder Umtausch auswählen",
+  "selection.noneEligible": "Kein Artikel dieser Bestellung ist berechtigt (berechtigte Status: {states}).",
+  "selection.notEligible": "{count} Artikel nicht für Rücksendung oder Umtausch berechtigt",
+  "article.qty": "Menge {qty}",
+  "config.banner": "Wählen Sie Ihre Rücksende- oder Umtauschoptionen",
+  "config.return": "Rücksendung",
+  "config.exchange": "Umtausch",
+  "config.returnReason": "Rücksendegrund",
+  "config.exchangeReason": "Umtauschgrund",
+  "config.sameModel": "Gleiches Modell",
+  "config.differentModel": "Anderes Modell",
+  "config.size": "Größe",
+  "config.color": "Farbe",
+  "config.search": "Artikel suchen...",
+  "config.noArticles": "Keine Artikel gefunden.",
+  "price.payByLink": "Ein Zahlungslink über {amount} wird gesendet, um die Bestellung abzuschließen.",
+  "price.refund": "Eine Erstattung von {amount} erfolgt auf die ursprüngliche Zahlungsmethode.",
+  "price.even": "Für diesen Umtausch ist keine Zahlung oder Erstattung erforderlich.",
+  "method.banner": "Rücksendemethode auswählen",
+  "method.inStore": "Rückgabe im Geschäft",
+  "method.inStoreDesc": "In einer unserer Filialen abgeben.",
+  "method.carrier": "Versanddienstleister: Standardversand",
+  "method.carrierDesc": "An einer Annahmestelle des Versanddienstleisters abgeben.",
+  "validation.banner": "Bestätigen Sie Ihre Kontakt- und Versanddaten",
+  "field.firstName": "Vorname",
+  "field.lastName": "Nachname",
+  "field.email": "E-Mail",
+  "field.phone": "Telefon",
+  "field.address": "Adresse",
+  "field.city": "Stadt",
+  "field.zip": "PLZ",
+  "field.country": "Land",
+  "confirm.title": "Anfrage vorbereitet!",
+  "confirm.text":
+    "Die Rücksende- / Umtauschanfrage für Bestellung {order} ist bereit. Die Anweisungen werden an {email} gesendet.",
+  "confirm.customer": "den Kunden",
+  "confirm.done": "Fertig",
+  "footer.back": "Zurück",
+  "footer.cancel": "Abbrechen",
+  "footer.next": "Weiter",
+  "footer.confirm": "Bestätigen",
+  "app.loading": "Bestellung {order} wird geladen…",
+  "state.fulfilled": "Erfüllt",
+  "state.returned": "Zurückgesendet",
+  "state.cancelled": "Storniert",
+  "state.delivered": "Zugestellt",
+  "reasons.return":
+    "Zu klein, Zu groß, Beschädigter Artikel, Entspricht nicht der Beschreibung, Zu spät geliefert, Meinung geändert",
+  "reasons.exchange":
+    "Falsche Größe, Falsche Farbe, Beschädigter Artikel, Stil gefällt mir nicht, Lieber ein anderes Modell",
+};
+
+const it: Partial<Dictionary> = {
+  "tabs.exchange": "Cambio",
+  "tabs.settings": "Impostazioni",
+  "steps.items": "Articoli",
+  "steps.options": "Opzioni",
+  "steps.method": "Metodo",
+  "steps.validation": "Conferma",
+  "selection.banner": "Ordine {order} — seleziona gli articoli da restituire o cambiare",
+  "selection.noneEligible": "Nessun articolo di questo ordine è idoneo (stati idonei: {states}).",
+  "selection.notEligible": "{count} articolo/i non idoneo/i al reso o al cambio",
+  "article.qty": "Qtà {qty}",
+  "config.banner": "Scegli le opzioni di reso o cambio",
+  "config.return": "Reso",
+  "config.exchange": "Cambio",
+  "config.returnReason": "Motivo del reso",
+  "config.exchangeReason": "Motivo del cambio",
+  "config.sameModel": "Stesso modello",
+  "config.differentModel": "Altro modello",
+  "config.size": "Taglia",
+  "config.color": "Colore",
+  "config.search": "Cerca articoli...",
+  "config.noArticles": "Nessun articolo trovato.",
+  "price.payByLink": "Riceverai un link di pagamento di {amount} per completare l'ordine.",
+  "price.refund": "Un rimborso di {amount} sarà emesso sul metodo di pagamento originale.",
+  "price.even": "Nessun pagamento o rimborso aggiuntivo per questo cambio.",
+  "method.banner": "Seleziona il metodo di reso",
+  "method.inStore": "Reso in negozio",
+  "method.inStoreDesc": "Consegna in uno dei nostri negozi.",
+  "method.carrier": "Corriere: consegna standard",
+  "method.carrierDesc": "Consegna in un punto di ritiro del corriere.",
+  "validation.banner": "Conferma i tuoi dati di contatto e di spedizione",
+  "field.firstName": "Nome",
+  "field.lastName": "Cognome",
+  "field.email": "Email",
+  "field.phone": "Telefono",
+  "field.address": "Indirizzo",
+  "field.city": "Città",
+  "field.zip": "CAP",
+  "field.country": "Paese",
+  "confirm.title": "Richiesta preparata!",
+  "confirm.text":
+    "La richiesta di reso / cambio per l'ordine {order} è pronta. Le istruzioni saranno inviate a {email}.",
+  "confirm.customer": "il cliente",
+  "confirm.done": "Fatto",
+  "footer.back": "Indietro",
+  "footer.cancel": "Annulla",
+  "footer.next": "Avanti",
+  "footer.confirm": "Conferma",
+  "app.loading": "Caricamento dell'ordine {order}…",
+  "state.fulfilled": "Evaso",
+  "state.returned": "Restituito",
+  "state.cancelled": "Annullato",
+  "state.delivered": "Consegnato",
+  "reasons.return":
+    "Troppo piccolo, Troppo grande, Articolo danneggiato, Non conforme alla descrizione, Arrivato in ritardo, Ho cambiato idea",
+  "reasons.exchange":
+    "Taglia sbagliata, Colore sbagliato, Articolo danneggiato, Lo stile non mi piace, Preferisco un altro modello",
+};
+
+const DICTIONARIES: Record<Language, Partial<Dictionary>> = { en, fr, es, de, it };
+
+/** "fr", "fr_FR", "fr-FR" → "fr"; unsupported → "en". */
+export function normalizeLanguage(value?: string): Language {
+  const code = (value ?? "").slice(0, 2).toLowerCase();
+  return (LANGUAGES as readonly string[]).includes(code) ? (code as Language) : "en";
+}
+
+type Vars = Record<string, string | number>;
+
+function interpolate(template: string, vars?: Vars): string {
+  return vars ? template.replace(/\{(\w+)\}/g, (match, name) => (name in vars ? String(vars[name]) : match)) : template;
+}
+
+export interface I18n {
+  language: Language;
+  /** BCP 47 locale used for number / currency formatting. */
+  locale: string;
+  t: (key: MessageKey, vars?: Vars) => string;
+  /** Like t(), but placeholders can be React nodes (e.g. <strong>). */
+  rich: (key: MessageKey, vars: Record<string, ReactNode>) => ReactNode;
+  formatPrice: (amount: number, currency: string) => string;
+  stateLabel: (state: string) => string;
+}
+
+export function createI18n(language: Language, locale?: string): I18n {
+  const dict = DICTIONARIES[language];
+  const lookup = (key: MessageKey) => dict[key] ?? en[key];
+  const bcp47 = (locale || language).replace("_", "-");
+  return {
+    language,
+    locale: bcp47,
+    t: (key, vars) => interpolate(lookup(key), vars),
+    rich: (key, vars) =>
+      lookup(key)
+        .split(/(\{\w+\})/)
+        .map((part, i) => {
+          const name = part.match(/^\{(\w+)\}$/)?.[1];
+          return <Fragment key={i}>{name && name in vars ? vars[name] : part}</Fragment>;
+        }),
+    formatPrice: (amount, currency) => {
+      try {
+        return new Intl.NumberFormat(bcp47, { style: "currency", currency }).format(amount);
+      } catch {
+        return `${amount.toFixed(2)} ${currency}`;
+      }
+    },
+    stateLabel: (state) => {
+      const key = `state.${state.toLowerCase()}` as MessageKey;
+      return key in en ? lookup(key) : state;
+    },
+  };
+}
+
+const I18nContext = createContext<I18n>(createI18n("en"));
+
+export function I18nProvider({
+  language,
+  locale,
+  children,
+}: {
+  language: Language;
+  locale?: string;
+  children: ReactNode;
+}) {
+  const value = useMemo(() => createI18n(language, locale), [language, locale]);
+  return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
+}
+
+export function useI18n(): I18n {
+  return useContext(I18nContext);
+}

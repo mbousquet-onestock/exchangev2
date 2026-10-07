@@ -1,3 +1,4 @@
+import { useI18n } from "../lib/i18n";
 import type { Article } from "../lib/onestock";
 import { CheckIcon, ItemImage } from "./ui";
 
@@ -10,8 +11,11 @@ export function ArticleCard({
   isSelected: boolean;
   onToggle?: (id: string) => void;
 }) {
+  const { t, formatPrice, stateLabel } = useI18n();
   const disabled = !article.eligible;
-  const details = [`${article.currency}${article.price}`, article.color, article.size].filter(Boolean).join(" | ");
+  const details = [formatPrice(article.price, article.currency), article.color, article.size]
+    .filter(Boolean)
+    .join(" | ");
   return (
     <div
       onClick={() => !disabled && onToggle?.(article.id)}
@@ -37,9 +41,11 @@ export function ArticleCard({
             disabled ? "bg-gray-100 text-gray-500" : "bg-brand-light text-brand"
           }`}
         >
-          {article.state}
+          {stateLabel(article.state)}
         </span>
-        <span className="text-[13px] text-gray-700 font-semibold whitespace-nowrap">Qty {article.quantity}</span>
+        <span className="text-[13px] text-gray-700 font-semibold whitespace-nowrap">
+          {t("article.qty", { qty: article.quantity })}
+        </span>
         {!disabled && (
           <div
             className={`w-[18px] h-[18px] border-2 rounded transition-all duration-200 flex items-center justify-center ${
