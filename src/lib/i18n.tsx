@@ -4,6 +4,7 @@ export const LANGUAGES = ["en", "fr", "es", "de", "it"] as const;
 export type Language = (typeof LANGUAGES)[number];
 
 const en = {
+  "selection.bannerWithParent": "Order {order} (parent order {parent}) — select items to return or exchange",
   "footer.submitting": "Sending…",
   "submit.error": "The request could not be saved: {detail}",
   "submit.success": "Request saved: {count} line(s) moved to return.",
@@ -173,6 +174,8 @@ export type MessageKey = keyof typeof en;
 type Dictionary = Record<MessageKey, string>;
 
 const fr: Dictionary = {
+  "selection.bannerWithParent":
+    "Commande {order} (commande parente {parent}) — sélectionnez les articles à retourner ou échanger",
   "footer.submitting": "Envoi…",
   "submit.error": "La demande n'a pas pu être enregistrée : {detail}",
   "submit.success": "Demande enregistrée : {count} ligne(s) passée(s) en retour.",
@@ -343,6 +346,8 @@ const fr: Dictionary = {
 
 // Other languages translate the customer-facing workflow; anything missing falls back to English.
 const es: Partial<Dictionary> = {
+  "selection.bannerWithParent":
+    "Pedido {order} (pedido padre {parent}) — seleccione los artículos a devolver o cambiar",
   "footer.submitting": "Enviando…",
   "submit.error": "No se pudo registrar la solicitud: {detail}",
   "submit.success": "Solicitud registrada: {count} línea(s) en devolución.",
@@ -405,6 +410,8 @@ const es: Partial<Dictionary> = {
 };
 
 const de: Partial<Dictionary> = {
+  "selection.bannerWithParent":
+    "Bestellung {order} (Hauptbestellung {parent}) — Artikel für Rücksendung oder Umtausch auswählen",
   "footer.submitting": "Wird gesendet…",
   "submit.error": "Die Anfrage konnte nicht gespeichert werden: {detail}",
   "submit.success": "Anfrage gespeichert: {count} Position(en) in Rücksendung.",
@@ -467,6 +474,8 @@ const de: Partial<Dictionary> = {
 };
 
 const it: Partial<Dictionary> = {
+  "selection.bannerWithParent":
+    "Ordine {order} (ordine padre {parent}) — seleziona gli articoli da restituire o cambiare",
   "footer.submitting": "Invio…",
   "submit.error": "Impossibile registrare la richiesta: {detail}",
   "submit.success": "Richiesta registrata: {count} riga/e in reso.",

@@ -166,7 +166,13 @@ export function ExchangeWorkflow({
   const renderSelection = () => (
     <div className="space-y-2">
       {notice}
-      <InfoBanner text={t("selection.banner", { order: order.id })} />
+      <InfoBanner
+        text={
+          order.parent_order_id && order.parent_order_id !== order.id
+            ? t("selection.bannerWithParent", { order: order.id, parent: order.parent_order_id })
+            : t("selection.banner", { order: order.id })
+        }
+      />
       {eligible.length === 0 && (
         <InfoBanner tone="warning" text={t("selection.noneEligible", { states: settings.eligibleStates || "—" })} />
       )}

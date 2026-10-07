@@ -14,7 +14,9 @@ from the OneStock API and shows the articles eligible for an exchange.
    The `extension_signature` is **not** verified (no backend / JWT on purpose).
 2. **Order** (`src/lib/onestock.ts`) — `GET /{version}/orders/{order_id}` sent as
    `POST` + `X-HTTP-Method-Override: GET`, with `site_id`, `token`, `fields` and
-   `item_features_lang` in the body. With login/password, a token is first
+   `item_features_lang` in the body. The fields are those of the reference
+   payload, including `parent_order_id` (`{name}` features expanded to the
+   features set in Settings). With login/password, a token is first
    requested through `POST /{version}/login`.
 3. **Articles** — each line item group becomes a row (joined to its order item
    for price and features). Rows whose state is in *Eligible line states*
@@ -51,8 +53,9 @@ from the OneStock API and shows the articles eligible for an exchange.
 - every selected line goes from its current state to the return state
   (`returning` by default, set in Settings) with `PATCH /line_item_groups`
   (`order_id`, `from`, `to`, `item_quantities`);
-- if there are exchanges, a sub-order of the initial order is created with
-  `POST /orders` (`parent_order_id`): customer, delivery (with the contact /
+- if there are exchanges, a sub-order is created with `POST /orders`, attached
+  to the parent order of the initial order (`parent_order_id`, or the initial
+  order itself when it has none): customer, ordering, rulesets, delivery (with the contact /
   address confirmed on the Validation step), types, sales channel and
   information are copied, and the exchanged items (replacement or chosen
   substitute) are added at 0.

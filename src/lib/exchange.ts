@@ -31,8 +31,9 @@ export interface SubmitResult {
  * Confirms the request:
  * 1. every selected line goes from its current state to the return state
  *    (PATCH /line_item_groups, one call per current state);
- * 2. exchanged items are shipped through a 0-priced sub-order of the initial
- *    order (POST /orders with parent_order_id).
+ * 2. exchanged items are shipped through a 0-priced sub-order attached to the
+ *    parent order of the initial order, or to the initial order itself when it
+ *    has no parent (POST /orders with parent_order_id).
  */
 export async function submitRequest(
   { settings, conn }: ApiContext,
@@ -88,9 +89,12 @@ export function buildSubOrder(order: RawOrder, exchanges: RequestedItem[], conta
 
   return {
     id: `${order.id}-EX${stamp}`,
-    parent_order_id: order.id,
+    parent_order_id: order.parent_order_id || order.id,
     types: order.types?.length ? order.types : ["ffs"],
     ...(order.sales_channel ? { sales_channel: order.sales_channel } : {}),
+    ...(order.ordering?.endpoint_id || order.ordering?.user_id ? { ordering: order.ordering } : {}),
+    ...(order.original_ruleset_id ? { original_ruleset_id: order.original_ruleset_id } : {}),
+    ...(order.original_ruleset_chaining_id ? { original_ruleset_chaining_id: order.original_ruleset_chaining_id } : {}),
     information: {
       ...order.information,
       exchange_of: order.id,
