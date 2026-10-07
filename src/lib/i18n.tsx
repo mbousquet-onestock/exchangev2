@@ -4,6 +4,29 @@ export const LANGUAGES = ["en", "fr", "es", "de", "it"] as const;
 export type Language = (typeof LANGUAGES)[number];
 
 const en = {
+  "config.variantNotFound": "This size / color combination does not exist for this model.",
+  "config.substitutes": "Possible substitutes ({count})",
+  "config.inStockOnly": "In stock only",
+  "catalog.loading": "Loading catalog…",
+  "catalog.error": "Catalog unavailable ({detail}) — showing the items of the order.",
+  "stock.loading": "Checking stock…",
+  "stock.available": "{count} available in stock",
+  "stock.short": "{count} in stock",
+  "stock.out": "Out of stock",
+  "stock.unknown": "Stock unknown for this item.",
+  "stock.notConfigured": "Stock not configured (stock query missing in Settings).",
+  "stock.error": "Stock unavailable: {detail}",
+  "footer.settings": "Settings",
+  "settings.backToExchange": "Back",
+  "settings.stock": "Stock & substitutes",
+  "settings.stockRequestName": "Stock query (request_name)",
+  "settings.stockRequestNameHint":
+    "Stock query defined in OMC > Configuration > Stock > Stock Queries, used by GET /stock_export.",
+  "settings.stockEndpointIds": "Stock locations",
+  "settings.stockEndpointIdsHint": "Comma separated endpoint ids. Empty = locations of the stock query.",
+  "settings.featurePrice": "Price feature",
+  "settings.catalogLimit": "Max catalog items",
+  "settings.catalogLimitHint": "Items of the same category fetched to find variants and substitutes.",
   "tabs.exchange": "Exchange",
   "tabs.settings": "Settings",
   "header.noSite": "no site",
@@ -153,6 +176,30 @@ export type MessageKey = keyof typeof en;
 type Dictionary = Record<MessageKey, string>;
 
 const fr: Dictionary = {
+  "config.variantNotFound": "Cette combinaison taille / couleur n'existe pas pour ce modèle.",
+  "config.substitutes": "Articles de substitution ({count})",
+  "config.inStockOnly": "En stock uniquement",
+  "catalog.loading": "Chargement du catalogue…",
+  "catalog.error": "Catalogue indisponible ({detail}) — affichage des articles de la commande.",
+  "stock.loading": "Vérification du stock…",
+  "stock.available": "{count} disponible(s) en stock",
+  "stock.short": "{count} en stock",
+  "stock.out": "Rupture de stock",
+  "stock.unknown": "Stock inconnu pour cet article.",
+  "stock.notConfigured": "Stock non configuré (requête de stock manquante dans les Paramètres).",
+  "stock.error": "Stock indisponible : {detail}",
+  "footer.settings": "Paramètres",
+  "settings.backToExchange": "Retour",
+  "settings.stock": "Stock et substitution",
+  "settings.stockRequestName": "Requête de stock (request_name)",
+  "settings.stockRequestNameHint":
+    "Requête définie dans OMC > Configuration > Stock > Stock Queries, utilisée par GET /stock_export.",
+  "settings.stockEndpointIds": "Emplacements de stock",
+  "settings.stockEndpointIdsHint":
+    "Ids d'endpoints séparés par des virgules. Vide = emplacements de la requête de stock.",
+  "settings.featurePrice": "Caract. prix",
+  "settings.catalogLimit": "Nb max d'articles catalogue",
+  "settings.catalogLimitHint": "Articles de la même catégorie récupérés pour trouver variantes et substituts.",
   "tabs.exchange": "Échange",
   "tabs.settings": "Paramètres",
   "header.noSite": "aucun site",
@@ -304,6 +351,15 @@ const fr: Dictionary = {
 
 // Other languages translate the customer-facing workflow; anything missing falls back to English.
 const es: Partial<Dictionary> = {
+  "config.variantNotFound": "Esta combinación de talla / color no existe para este modelo.",
+  "config.substitutes": "Artículos de sustitución ({count})",
+  "config.inStockOnly": "Solo en stock",
+  "catalog.loading": "Cargando catálogo…",
+  "stock.loading": "Comprobando stock…",
+  "stock.available": "{count} disponible(s) en stock",
+  "stock.short": "{count} en stock",
+  "stock.out": "Agotado",
+  "stock.unknown": "Stock desconocido para este artículo.",
   "tabs.exchange": "Cambio",
   "tabs.settings": "Ajustes",
   "steps.items": "Artículos",
@@ -363,6 +419,15 @@ const es: Partial<Dictionary> = {
 };
 
 const de: Partial<Dictionary> = {
+  "config.variantNotFound": "Diese Größen-/Farbkombination gibt es für dieses Modell nicht.",
+  "config.substitutes": "Ersatzartikel ({count})",
+  "config.inStockOnly": "Nur auf Lager",
+  "catalog.loading": "Katalog wird geladen…",
+  "stock.loading": "Bestand wird geprüft…",
+  "stock.available": "{count} auf Lager verfügbar",
+  "stock.short": "{count} auf Lager",
+  "stock.out": "Nicht auf Lager",
+  "stock.unknown": "Bestand für diesen Artikel unbekannt.",
   "tabs.exchange": "Umtausch",
   "tabs.settings": "Einstellungen",
   "steps.items": "Artikel",
@@ -422,6 +487,15 @@ const de: Partial<Dictionary> = {
 };
 
 const it: Partial<Dictionary> = {
+  "config.variantNotFound": "Questa combinazione taglia / colore non esiste per questo modello.",
+  "config.substitutes": "Articoli sostitutivi ({count})",
+  "config.inStockOnly": "Solo disponibili",
+  "catalog.loading": "Caricamento del catalogo…",
+  "stock.loading": "Verifica dello stock…",
+  "stock.available": "{count} disponibile/i in stock",
+  "stock.short": "{count} in stock",
+  "stock.out": "Esaurito",
+  "stock.unknown": "Stock sconosciuto per questo articolo.",
   "tabs.exchange": "Cambio",
   "tabs.settings": "Impostazioni",
   "steps.items": "Articoli",

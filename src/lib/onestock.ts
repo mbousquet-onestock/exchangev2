@@ -5,7 +5,7 @@ export interface ResolvedConnection {
   baseUrl: string; // includes the API version, no trailing slash
 }
 
-export type ApiErrorCode = "noToken" | "noCredentials" | "network" | "http";
+export type ApiErrorCode = "noToken" | "noCredentials" | "network" | "http" | "stockNotConfigured" | "notInCatalog";
 
 export class ApiError extends Error {
   constructor(
@@ -88,7 +88,7 @@ export async function getToken(settings: Settings, conn: ResolvedConnection, for
   return token;
 }
 
-async function authed<T>(
+export async function authed<T>(
   settings: Settings,
   conn: ResolvedConnection,
   path: string,
