@@ -1,4 +1,4 @@
-import { ApiError, authed, type ResolvedConnection } from "./onestock";
+import { ApiError, authed, pickImage, type ResolvedConnection } from "./onestock";
 import { splitList, type Settings } from "./settings";
 
 /** An item sheet from the OneStock catalog (GET /items), flattened for display. */
@@ -42,7 +42,7 @@ function toCatalogItem(raw: RawItem, settings: Settings, lang: string): CatalogI
     name: features[settings.featureName] ?? raw.id,
     color: features[settings.featureColor],
     size: features[settings.featureSize],
-    imageUrl: features[settings.featureImage]?.split(", ")[0],
+    imageUrl: pickImage(byLang ?? all, settings.featureImage),
     price: Number.isFinite(price) ? price : undefined,
     features,
   };
@@ -64,7 +64,7 @@ export async function fetchItemSheets(
         settings.featureName,
         settings.featureColor,
         settings.featureSize,
-        settings.featureImage,
+        ...splitList(settings.featureImage),
         settings.featurePrice,
         ...splitList(settings.sheetFeatures),
       ].filter(Boolean),

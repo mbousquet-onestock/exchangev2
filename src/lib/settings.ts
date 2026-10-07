@@ -31,6 +31,7 @@ export interface Settings {
   featureName: string;
   featureColor: string;
   featureSize: string;
+  /** Image feature, or several candidates (comma separated): the first one found is used. */
   featureImage: string;
   /** Item feature holding the price, used for substitutes (GET /items). */
   featurePrice: string;
@@ -49,7 +50,7 @@ export interface Settings {
   exchangeReasons: string;
 }
 
-const SETTINGS_VERSION = 3;
+const SETTINGS_VERSION = 4;
 
 export const DEFAULT_SETTINGS: Settings = {
   version: SETTINGS_VERSION,
@@ -69,7 +70,7 @@ export const DEFAULT_SETTINGS: Settings = {
   featureName: "name",
   featureColor: "color",
   featureSize: "size",
-  featureImage: "image_url",
+  featureImage: "image_url, image",
   featurePrice: "price",
   featureSubstitution: "substitution",
   sheetFeatures: "description",
@@ -93,6 +94,7 @@ function load(): Settings {
         delete stored.itemFeaturesLang;
       }
       if ((stored.version ?? 0) < 3 && !stored.stockRequestName) delete stored.stockRequestName;
+      if ((stored.version ?? 0) < 4 && stored.featureImage === "image_url") delete stored.featureImage;
       // Keep only known keys (drops removed settings).
       const known = Object.fromEntries(Object.entries(stored).filter(([key]) => key in DEFAULT_SETTINGS));
       return { ...DEFAULT_SETTINGS, ...known, version: SETTINGS_VERSION };

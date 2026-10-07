@@ -28,13 +28,15 @@ from the OneStock API and shows the articles eligible for an exchange.
    action resets the reason). Empty lists in Settings use translated defaults
    (return: *Rétractation, Ne convient pas*; exchange: *Casse, Non livré*).
 6. **Stock & substitutes** (`src/lib/catalog.ts`) — when an item is set to
-   *exchange*: *same model* only shows the available stock of the ordered item;
-   *different model* lists the substitution items whose ids are in the ordered
+   *exchange*: *Replacement* shows the sheet and stock of the ordered item;
+   *Substitution* lists the substitution items whose ids are in the ordered
    item's `substitution` feature (`order_items.item.features.substitution`),
    with their item sheet (`GET /items`: `item_ids`, then a pattern search on
    each id as fallback) and their stock. Out-of-stock substitutes cannot be
    chosen. Stock comes from `GET /stock_export` with the stock query set in
    Settings (default `detailed`), summed over locations and stock types.
+   Images come from the first image feature found (`image_url, image` by
+   default), else from any feature value that looks like an image URL.
 7. **Settings tab** — hidden from customers: open it with the invisible gear
    button left of *Cancel* in the footer (it appears on hover / focus). It holds
    everything the context doesn't provide: environment /

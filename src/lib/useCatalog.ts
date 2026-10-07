@@ -8,8 +8,8 @@ export type Loadable<T> = { status: "loading" } | { status: "ready"; value: T } 
 export interface CatalogState {
   /** Stock of the ordered item and of its substitutes, keyed by item id. */
   stock: Loadable<Record<string, number>>;
-  /** Sheets of the substitution items listed on the ordered item. */
-  substitutes: Loadable<CatalogItem[]>;
+  /** Item sheets of the ordered item and of its substitution items. */
+  sheets: Loadable<CatalogItem[]>;
 }
 
 export interface ApiContext {
@@ -18,9 +18,9 @@ export interface ApiContext {
   featuresLang: string;
 }
 
-const LOADING: CatalogState = { stock: { status: "loading" }, substitutes: { status: "loading" } };
+const LOADING: CatalogState = { stock: { status: "loading" }, sheets: { status: "loading" } };
 
-/** Lazily loads stock + substitute sheets around ordered items, once per SKU. */
+/** Lazily loads stock + item sheets around ordered items, once per SKU. */
 export function useCatalog({ settings, conn, featuresLang }: ApiContext) {
   const [entries, setEntries] = useState<Record<string, CatalogState>>({});
   const requested = useRef(new Set<string>());
@@ -44,12 +44,10 @@ export function useCatalog({ settings, conn, featuresLang }: ApiContext) {
         (value) => set({ stock: { status: "ready", value } }),
         (error) => set({ stock: { status: "error", error } }),
       );
-      if (!substitutionIds.length) set({ substitutes: { status: "ready", value: [] } });
-      else
-        fetchItemSheets(settings, conn, substitutionIds, featuresLang).then(
-          (value) => set({ substitutes: { status: "ready", value } }),
-          (error) => set({ substitutes: { status: "error", error } }),
-        );
+      fetchItemSheets(settings, conn, [sku, ...substitutionIds], featuresLang).then(
+        (value) => set({ sheets: { status: "ready", value } }),
+        (error) => set({ sheets: { status: "error", error } }),
+      );
     },
     [settings, conn, featuresLang],
   );

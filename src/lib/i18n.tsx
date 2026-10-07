@@ -4,6 +4,9 @@ export const LANGUAGES = ["en", "fr", "es", "de", "it"] as const;
 export type Language = (typeof LANGUAGES)[number];
 
 const en = {
+  "config.sameModel": "Replacement",
+  "config.differentModel": "Substitution",
+  "config.replacementItem": "Replacement item",
   "config.noSubstitutes": "No substitution item is defined for this item.",
   "config.sheetDetails": "Item sheet",
   "catalog.loading": "Loading item sheets…",
@@ -52,8 +55,6 @@ const en = {
   "config.exchange": "Exchange",
   "config.returnReason": "Return reason",
   "config.exchangeReason": "Exchange reason",
-  "config.sameModel": "Same model",
-  "config.differentModel": "Different model",
   "price.payByLink": "A pay-by-link for {amount} will be sent to complete the order.",
   "price.refund": "A refund of {amount} will be issued to the original payment method.",
   "price.even": "No additional payment or refund required for this exchange.",
@@ -148,7 +149,7 @@ const en = {
   "settings.featureName": "Name feature",
   "settings.featureColor": "Color feature",
   "settings.featureSize": "Size feature",
-  "settings.featureImage": "Image feature",
+  "settings.featureImage": "Image feature(s)",
   "settings.reasons": "Reasons",
   "settings.returnReasons": "Return reasons",
   "settings.exchangeReasons": "Exchange reasons",
@@ -172,6 +173,9 @@ export type MessageKey = keyof typeof en;
 type Dictionary = Record<MessageKey, string>;
 
 const fr: Dictionary = {
+  "config.sameModel": "Remplacement",
+  "config.differentModel": "Substitution",
+  "config.replacementItem": "Article de remplacement",
   "config.noSubstitutes": "Aucun article de substitution n'est défini pour cet article.",
   "config.sheetDetails": "Fiche article",
   "catalog.loading": "Chargement des fiches articles…",
@@ -222,8 +226,6 @@ const fr: Dictionary = {
   "config.exchange": "Échange",
   "config.returnReason": "Motif de retour",
   "config.exchangeReason": "Motif d'échange",
-  "config.sameModel": "Même modèle",
-  "config.differentModel": "Autre modèle",
   "price.payByLink": "Un lien de paiement de {amount} vous sera envoyé pour finaliser la commande.",
   "price.refund": "Un remboursement de {amount} sera effectué sur le moyen de paiement d'origine.",
   "price.even": "Aucun paiement ni remboursement supplémentaire pour cet échange.",
@@ -342,6 +344,9 @@ const fr: Dictionary = {
 
 // Other languages translate the customer-facing workflow; anything missing falls back to English.
 const es: Partial<Dictionary> = {
+  "config.sameModel": "Reemplazo",
+  "config.differentModel": "Sustitución",
+  "config.replacementItem": "Artículo de reemplazo",
   "config.noSubstitutes": "No hay artículos de sustitución definidos para este artículo.",
   "config.sheetDetails": "Ficha del artículo",
   "catalog.loading": "Cargando fichas…",
@@ -368,8 +373,6 @@ const es: Partial<Dictionary> = {
   "config.exchange": "Cambio",
   "config.returnReason": "Motivo de devolución",
   "config.exchangeReason": "Motivo de cambio",
-  "config.sameModel": "Mismo modelo",
-  "config.differentModel": "Otro modelo",
   "price.payByLink": "Se enviará un enlace de pago de {amount} para completar el pedido.",
   "price.refund": "Se reembolsarán {amount} en el método de pago original.",
   "price.even": "No se requiere pago ni reembolso adicional para este cambio.",
@@ -404,6 +407,9 @@ const es: Partial<Dictionary> = {
 };
 
 const de: Partial<Dictionary> = {
+  "config.sameModel": "Ersatz",
+  "config.differentModel": "Substitution",
+  "config.replacementItem": "Ersatzartikel",
   "config.noSubstitutes": "Für diesen Artikel sind keine Ersatzartikel definiert.",
   "config.sheetDetails": "Artikeldetails",
   "catalog.loading": "Artikeldaten werden geladen…",
@@ -430,8 +436,6 @@ const de: Partial<Dictionary> = {
   "config.exchange": "Umtausch",
   "config.returnReason": "Rücksendegrund",
   "config.exchangeReason": "Umtauschgrund",
-  "config.sameModel": "Gleiches Modell",
-  "config.differentModel": "Anderes Modell",
   "price.payByLink": "Ein Zahlungslink über {amount} wird gesendet, um die Bestellung abzuschließen.",
   "price.refund": "Eine Erstattung von {amount} erfolgt auf die ursprüngliche Zahlungsmethode.",
   "price.even": "Für diesen Umtausch ist keine Zahlung oder Erstattung erforderlich.",
@@ -466,6 +470,9 @@ const de: Partial<Dictionary> = {
 };
 
 const it: Partial<Dictionary> = {
+  "config.sameModel": "Rimpiazzo",
+  "config.differentModel": "Sostituzione",
+  "config.replacementItem": "Articolo di rimpiazzo",
   "config.noSubstitutes": "Nessun articolo sostitutivo definito per questo articolo.",
   "config.sheetDetails": "Scheda articolo",
   "catalog.loading": "Caricamento delle schede…",
@@ -492,8 +499,6 @@ const it: Partial<Dictionary> = {
   "config.exchange": "Cambio",
   "config.returnReason": "Motivo del reso",
   "config.exchangeReason": "Motivo del cambio",
-  "config.sameModel": "Stesso modello",
-  "config.differentModel": "Altro modello",
   "price.payByLink": "Riceverai un link di pagamento di {amount} per completare l'ordine.",
   "price.refund": "Un rimborso di {amount} sarà emesso sul metodo di pagamento originale.",
   "price.even": "Nessun pagamento o rimborso aggiuntivo per questo cambio.",

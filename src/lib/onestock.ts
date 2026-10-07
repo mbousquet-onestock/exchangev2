@@ -170,7 +170,7 @@ export async function fetchOrder(
     settings.featureName,
     settings.featureColor,
     settings.featureSize,
-    settings.featureImage,
+    ...splitList(settings.featureImage),
     settings.featureSubstitution,
   ].filter(Boolean);
   const fields = [
@@ -234,6 +234,24 @@ function feature(features: Record<string, unknown> | undefined, name: string): s
 }
 
 /** Ids listed in an item feature: an array and/or a string separated by , ; | or spaces. */
+const IMAGE_URL = /^(https?:)?\/\/\S+\.(jpe?g|png|webp|gif|avif|svg)(\?\S*)?$/i;
+
+/**
+ * Image URL of an item: the first configured image feature that has a value,
+ * else any feature value that looks like an image URL.
+ */
+export function pickImage(features: Record<string, unknown>, candidates: string): string | undefined {
+  for (const name of splitList(candidates)) {
+    const value = feature(features, name);
+    if (value) return value;
+  }
+  for (const value of Object.values(features)) {
+    const url = (Array.isArray(value) ? value : [value]).map(String).find((v) => IMAGE_URL.test(v.trim()));
+    if (url) return url.trim();
+  }
+  return undefined;
+}
+
 export function parseIdList(value: unknown): string[] {
   const values = Array.isArray(value) ? value.flat(2) : [value];
   return [
@@ -270,7 +288,7 @@ export function toArticles(order: RawOrder, settings: Settings): Article[] {
       name: feature(features, settings.featureName) ?? itemId,
       color: feature(features, settings.featureColor),
       size: feature(features, settings.featureSize),
-      imageUrl: feature(features, settings.featureImage),
+      imageUrl: pickImage(features, settings.featureImage),
       price: unit,
       currency: (oi?.pricing_details?.currency ?? orderCurrency).toUpperCase(),
       quantity,

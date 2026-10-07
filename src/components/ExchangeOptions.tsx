@@ -44,11 +44,39 @@ export function ExchangeOptions({
         ))}
       </div>
       {choice.exchangeType === "same_model" ? (
-        // Same model: the ordered item itself, only its stock is shown.
-        <StockBadge stock={state?.stock} itemId={article.sku} />
+        <Replacement article={article} state={state} />
       ) : (
         <Substitutes article={article} choice={choice} onChange={onChange} state={state} />
       )}
+    </div>
+  );
+}
+
+/** Replacement by the ordered item itself: its sheet and stock. */
+function Replacement({ article, state }: { article: Article; state?: CatalogState }) {
+  const { t } = useI18n();
+  const sheet = state?.sheets.status === "ready" ? state.sheets.value.find((s) => s.id === article.sku) : undefined;
+  // The order already gives the main attributes; the catalog sheet completes them when available.
+  const item: CatalogItem = {
+    id: article.sku,
+    name: sheet?.name ?? article.name,
+    color: sheet?.color ?? article.color,
+    size: sheet?.size ?? article.size,
+    imageUrl: sheet?.imageUrl ?? article.imageUrl,
+    price: sheet?.price ?? article.price,
+    features: sheet?.features ?? {},
+  };
+  return (
+    <div className="space-y-2">
+      <FieldLabel>{t("config.replacementItem")}</FieldLabel>
+      {state?.stock.status === "error" && <StockBadge stock={state.stock} />}
+      <ItemSheet
+        item={item}
+        article={article}
+        quantity={state?.stock.status === "ready" ? state.stock.value[article.sku] : undefined}
+        stockLoading={!state || state.stock.status === "loading"}
+        active
+      />
     </div>
   );
 }
@@ -66,10 +94,10 @@ function Substitutes({
 }) {
   const { t } = useI18n();
   if (!article.substitutionIds.length) return <InfoBanner tone="warning" text={t("config.noSubstitutes")} />;
-  if (!state || state.substitutes.status === "loading") return <Loading text={t("catalog.loading")} />;
+  if (!state || state.sheets.status === "loading") return <Loading text={t("catalog.loading")} />;
 
   const quantities = state.stock.status === "ready" ? state.stock.value : undefined;
-  const sheets = state.substitutes.status === "ready" ? state.substitutes.value : [];
+  const sheets = state.sheets.status === "ready" ? state.sheets.value : [];
   // Keep the order of the substitution feature; ids without sheet are still listed.
   const items: CatalogItem[] = article.substitutionIds.map(
     (id) => sheets.find((s) => s.id === id) ?? { id, name: id, features: {} },
@@ -79,13 +107,13 @@ function Substitutes({
   return (
     <div className="space-y-2">
       <FieldLabel>{t("config.substitutes", { count: items.length })}</FieldLabel>
-      {state.substitutes.status === "error" && (
-        <InfoBanner tone="warning" text={t("catalog.error", { detail: errorText(state.substitutes.error) })} />
+      {state.sheets.status === "error" && (
+        <InfoBanner tone="warning" text={t("catalog.error", { detail: errorText(state.sheets.error) })} />
       )}
       {state.stock.status === "error" && <StockBadge stock={state.stock} />}
       <div className="grid grid-cols-1 gap-2">
         {items.map((x) => (
-          <SubstituteSheet
+          <ItemSheet
             key={x.id}
             item={x}
             article={article}
@@ -101,8 +129,8 @@ function Substitutes({
   );
 }
 
-/** Item sheet of a substitute: picture, main attributes, stock and the other features. */
-function SubstituteSheet({
+/** Item sheet: picture, main attributes, stock and the other features. Selectable when onSelect is given. */
+function ItemSheet({
   item,
   article,
   quantity,
@@ -115,21 +143,21 @@ function SubstituteSheet({
   quantity?: number;
   stockLoading: boolean;
   active: boolean;
-  onSelect: () => void;
+  onSelect?: () => void;
 }) {
   const { t, formatPrice } = useI18n();
-  const disabled = quantity === 0;
+  const disabled = !!onSelect && quantity === 0;
   const shown = new Set(["name", "color", "size", "price", "image", "image_url"]);
   const extra = Object.entries(item.features).filter(([name, value]) => !shown.has(name) && !value.startsWith("http"));
   return (
     <div
-      onClick={() => !disabled && onSelect()}
-      className={`p-2 border rounded-lg transition-all ${
+      onClick={() => !disabled && onSelect?.()}
+      className={`p-2 border rounded-lg transition-all ${onSelect && !disabled ? "cursor-pointer" : ""} ${
         disabled
           ? "opacity-50 cursor-not-allowed border-gray-100"
           : active
-            ? "cursor-pointer border-brand bg-brand/5"
-            : "cursor-pointer border-gray-200 hover:border-gray-300"
+            ? "border-brand bg-brand/5"
+            : "border-gray-200 hover:border-gray-300"
       }`}
     >
       <div className="flex items-start gap-3">

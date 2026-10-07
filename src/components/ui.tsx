@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 export function InfoBanner({ text, tone = "info" }: { text: ReactNode; tone?: "info" | "error" | "warning" }) {
   const tones = {
@@ -40,7 +40,9 @@ export function CheckIcon({ className = "w-3 h-3", strokeWidth = 4 }: { classNam
 }
 
 export function ItemImage({ src, alt, className }: { src?: string; alt: string; className: string }) {
-  if (!src) {
+  // Broken URLs fall back on the placeholder.
+  const [failed, setFailed] = useState<string>();
+  if (!src || failed === src) {
     return (
       <div className={`${className} flex items-center justify-center bg-gray-100 text-gray-300`}>
         <svg className="w-1/2 h-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -54,5 +56,5 @@ export function ItemImage({ src, alt, className }: { src?: string; alt: string; 
       </div>
     );
   }
-  return <img src={src} alt={alt} className={`${className} object-cover`} />;
+  return <img src={src} alt={alt} className={`${className} object-cover`} onError={() => setFailed(src)} />;
 }
