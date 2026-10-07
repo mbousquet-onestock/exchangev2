@@ -169,7 +169,7 @@ function Notice({
       <div className="flex gap-2 mt-3">
         <button
           onClick={onAction}
-          className="px-4 py-2 bg-brand text-white text-[14px] font-bold rounded-lg hover:bg-brand-dark"
+          className="px-4 py-2 bg-brand text-white text-[13px] font-bold rounded-lg hover:bg-brand-dark"
         >
           {action}
         </button>
