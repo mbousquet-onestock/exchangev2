@@ -4,6 +4,12 @@ export const LANGUAGES = ["en", "fr", "es", "de", "it"] as const;
 export type Language = (typeof LANGUAGES)[number];
 
 const en = {
+  "footer.submitting": "Sending…",
+  "submit.error": "The request could not be saved: {detail}",
+  "submit.success": "Request saved: {count} line(s) moved to return.",
+  "submit.subOrder": "Exchange sub-order {id} created.",
+  "settings.returnState": "Return state",
+  "settings.returnStateHint": "State the selected lines are moved to on confirmation (PATCH /line_item_groups).",
   "config.sameModel": "Replacement",
   "config.differentModel": "Substitution",
   "config.replacementItem": "Replacement item",
@@ -74,12 +80,6 @@ const en = {
   "field.city": "City",
   "field.zip": "Zip",
   "field.country": "Country",
-
-  "confirm.title": "Request prepared!",
-  "confirm.text": "The return / exchange request for order {order} is ready. Instructions will be sent to {email}.",
-  "confirm.customer": "the customer",
-  "confirm.payload": "Request payload",
-  "confirm.done": "Done",
 
   "footer.back": "Back",
   "footer.cancel": "Cancel",
@@ -173,6 +173,12 @@ export type MessageKey = keyof typeof en;
 type Dictionary = Record<MessageKey, string>;
 
 const fr: Dictionary = {
+  "footer.submitting": "Envoi…",
+  "submit.error": "La demande n'a pas pu être enregistrée : {detail}",
+  "submit.success": "Demande enregistrée : {count} ligne(s) passée(s) en retour.",
+  "submit.subOrder": "Sous-commande d'échange {id} créée.",
+  "settings.returnState": "État de retour",
+  "settings.returnStateHint": "État donné aux lignes sélectionnées à la confirmation (PATCH /line_item_groups).",
   "config.sameModel": "Remplacement",
   "config.differentModel": "Substitution",
   "config.replacementItem": "Article de remplacement",
@@ -245,13 +251,6 @@ const fr: Dictionary = {
   "field.city": "Ville",
   "field.zip": "Code postal",
   "field.country": "Pays",
-
-  "confirm.title": "Demande préparée !",
-  "confirm.text":
-    "La demande de retour / échange pour la commande {order} est prête. Les instructions seront envoyées à {email}.",
-  "confirm.customer": "le client",
-  "confirm.payload": "Contenu de la demande",
-  "confirm.done": "Terminer",
 
   "footer.back": "Précédent",
   "footer.cancel": "Annuler",
@@ -344,6 +343,10 @@ const fr: Dictionary = {
 
 // Other languages translate the customer-facing workflow; anything missing falls back to English.
 const es: Partial<Dictionary> = {
+  "footer.submitting": "Enviando…",
+  "submit.error": "No se pudo registrar la solicitud: {detail}",
+  "submit.success": "Solicitud registrada: {count} línea(s) en devolución.",
+  "submit.subOrder": "Subpedido de cambio {id} creado.",
   "config.sameModel": "Reemplazo",
   "config.differentModel": "Sustitución",
   "config.replacementItem": "Artículo de reemplazo",
@@ -390,11 +393,6 @@ const es: Partial<Dictionary> = {
   "field.city": "Ciudad",
   "field.zip": "Código postal",
   "field.country": "País",
-  "confirm.title": "¡Solicitud preparada!",
-  "confirm.text":
-    "La solicitud de devolución / cambio del pedido {order} está lista. Las instrucciones se enviarán a {email}.",
-  "confirm.customer": "el cliente",
-  "confirm.done": "Hecho",
   "footer.back": "Atrás",
   "footer.cancel": "Cancelar",
   "footer.next": "Siguiente",
@@ -407,6 +405,10 @@ const es: Partial<Dictionary> = {
 };
 
 const de: Partial<Dictionary> = {
+  "footer.submitting": "Wird gesendet…",
+  "submit.error": "Die Anfrage konnte nicht gespeichert werden: {detail}",
+  "submit.success": "Anfrage gespeichert: {count} Position(en) in Rücksendung.",
+  "submit.subOrder": "Umtausch-Unterauftrag {id} erstellt.",
   "config.sameModel": "Ersatz",
   "config.differentModel": "Substitution",
   "config.replacementItem": "Ersatzartikel",
@@ -453,11 +455,6 @@ const de: Partial<Dictionary> = {
   "field.city": "Stadt",
   "field.zip": "PLZ",
   "field.country": "Land",
-  "confirm.title": "Anfrage vorbereitet!",
-  "confirm.text":
-    "Die Rücksende- / Umtauschanfrage für Bestellung {order} ist bereit. Die Anweisungen werden an {email} gesendet.",
-  "confirm.customer": "den Kunden",
-  "confirm.done": "Fertig",
   "footer.back": "Zurück",
   "footer.cancel": "Abbrechen",
   "footer.next": "Weiter",
@@ -470,6 +467,10 @@ const de: Partial<Dictionary> = {
 };
 
 const it: Partial<Dictionary> = {
+  "footer.submitting": "Invio…",
+  "submit.error": "Impossibile registrare la richiesta: {detail}",
+  "submit.success": "Richiesta registrata: {count} riga/e in reso.",
+  "submit.subOrder": "Sotto-ordine di cambio {id} creato.",
   "config.sameModel": "Rimpiazzo",
   "config.differentModel": "Sostituzione",
   "config.replacementItem": "Articolo di rimpiazzo",
@@ -516,11 +517,6 @@ const it: Partial<Dictionary> = {
   "field.city": "Città",
   "field.zip": "CAP",
   "field.country": "Paese",
-  "confirm.title": "Richiesta preparata!",
-  "confirm.text":
-    "La richiesta di reso / cambio per l'ordine {order} è pronta. Le istruzioni saranno inviate a {email}.",
-  "confirm.customer": "il cliente",
-  "confirm.done": "Fatto",
   "footer.back": "Indietro",
   "footer.cancel": "Annulla",
   "footer.next": "Avanti",

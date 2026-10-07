@@ -46,8 +46,18 @@ from the OneStock API and shows the articles eligible for an exchange.
    eligible states, return and exchange reasons. Stored in
    `localStorage`.
 
-The final step builds the return / exchange request payload (displayed on the
-confirmation screen); it is not yet sent to any API.
+**Confirm** (`src/lib/exchange.ts`) — on the Validation step:
+
+- every selected line goes from its current state to the return state
+  (`returning` by default, set in Settings) with `PATCH /line_item_groups`
+  (`order_id`, `from`, `to`, `item_quantities`);
+- if there are exchanges, a sub-order of the initial order is created with
+  `POST /orders` (`parent_order_id`): customer, delivery (with the contact /
+  address confirmed on the Validation step), types, sales channel and
+  information are copied, and the exchanged items (replacement or chosen
+  substitute) are added at 0.
+
+The order is then reloaded and the result is shown above the items.
 
 ## CORS proxy
 

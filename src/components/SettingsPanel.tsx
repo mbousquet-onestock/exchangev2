@@ -207,7 +207,10 @@ export function SettingsPanel({
       </Section>
 
       <Section title="settings.articles">
-        {text("eligibleStates", "settings.eligibleStates", t("settings.eligibleStatesHint"))}
+        <div className="grid grid-cols-2 gap-2.5">
+          {text("eligibleStates", "settings.eligibleStates", t("settings.eligibleStatesHint"))}
+          {text("returnState", "settings.returnState", t("settings.returnStateHint"))}
+        </div>
         <div className="grid grid-cols-4 gap-2.5">
           {text("featureName", "settings.featureName")}
           {text("featureColor", "settings.featureColor")}

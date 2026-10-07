@@ -6,7 +6,6 @@ export enum Step {
   Configuration = 2,
   Method = 3,
   Validation = 4,
-  Confirmation = 5,
 }
 
 const STEPS: { id: Step; label: MessageKey }[] = [

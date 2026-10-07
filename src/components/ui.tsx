@@ -1,10 +1,17 @@
 import { useState, type ReactNode } from "react";
 
-export function InfoBanner({ text, tone = "info" }: { text: ReactNode; tone?: "info" | "error" | "warning" }) {
+export function InfoBanner({
+  text,
+  tone = "info",
+}: {
+  text: ReactNode;
+  tone?: "info" | "error" | "warning" | "success";
+}) {
   const tones = {
     info: "bg-[#f2f2f2] text-[#555]",
     error: "bg-red-50 text-red-700 border border-red-100",
     warning: "bg-orange-50 text-orange-800 border border-orange-100",
+    success: "bg-green-50 text-green-800 border border-green-100",
   };
   return (
     <div className={`rounded-lg py-2.5 px-4 mb-2 flex items-center gap-3 ${tones[tone]}`}>

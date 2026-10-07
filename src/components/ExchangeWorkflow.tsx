@@ -2,26 +2,16 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react
 import { useI18n, type MessageKey } from "../lib/i18n";
 import type { Article, RawOrder } from "../lib/onestock";
 import { splitList } from "../lib/settings";
+import { submitRequest, type Contact, type SubmitResult } from "../lib/exchange";
 import { useCatalog, type ApiContext } from "../lib/useCatalog";
 import { ArticleCard } from "./ArticleCard";
 import { ExchangeOptions, type ExchangeChoice } from "./ExchangeOptions";
 import { Step, StepIndicator } from "./StepIndicator";
-import { CheckIcon, FieldLabel, InfoBanner, ItemImage, inputClass, selectClass } from "./ui";
+import { FieldLabel, InfoBanner, ItemImage, inputClass, selectClass } from "./ui";
 
 interface ItemConfig extends ExchangeChoice {
   action: "return" | "exchange";
   reason: string;
-}
-
-interface Contact {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  address: string;
-  city: string;
-  zipCode: string;
-  country: string;
 }
 
 const RETURN_METHODS: { id: string; label: MessageKey; description: MessageKey; icon: ReactNode }[] = [
@@ -77,13 +67,16 @@ export function ExchangeWorkflow({
   order,
   articles,
   api,
-  onReload,
+  notice,
+  onSubmitted,
   onOpenSettings,
 }: {
   order: RawOrder;
   articles: Article[];
   api: ApiContext;
-  onReload: () => void;
+  /** Result of the previous confirmation, shown above the items. */
+  notice?: ReactNode;
+  onSubmitted: (result: SubmitResult) => void;
   onOpenSettings: () => void;
 }) {
   const { settings } = api;
@@ -94,7 +87,7 @@ export function ExchangeWorkflow({
   const [method, setMethod] = useState("");
   const [contact, setContact] = useState<Contact>(() => contactFromOrder(order));
 
-  const { t, rich, formatPrice } = useI18n();
+  const { t, formatPrice } = useI18n();
   // Return and exchange reasons are distinct lists; empty settings fall back to translated defaults.
   const reasons = useMemo(
     () => ({
@@ -127,37 +120,52 @@ export function ExchangeWorkflow({
     [],
   );
 
-  const canGoNext = !(step === Step.Selection && selectedIds.length === 0) && !(step === Step.Method && !method);
-  const next = () => canGoNext && setStep((s) => s + 1);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<unknown>();
+
+  // A substitution exchange needs a chosen substitute.
+  const missingSubstitute = selected.some(
+    (a) =>
+      configs[a.id]?.action === "exchange" &&
+      configs[a.id]?.exchangeType === "different_model" &&
+      !configs[a.id]?.exchangeArticleSku,
+  );
+  const canGoNext =
+    !submitting &&
+    !(step === Step.Selection && selectedIds.length === 0) &&
+    !(step === Step.Configuration && missingSubstitute) &&
+    !(step === Step.Method && !method);
   const back = () => setStep((s) => s - 1);
 
-  const request = useMemo(
-    () => ({
-      order_id: order.id,
-      return_method: method,
-      contact,
-      items: selected.map((a) => {
-        const c = configs[a.id];
+  const confirm = async () => {
+    setSubmitting(true);
+    setSubmitError(undefined);
+    try {
+      const items = selected.map((article) => {
+        const c = configs[article.id];
         return {
-          line_item_group_id: a.id,
-          order_item_id: a.orderItemId,
-          item_id: a.sku,
-          quantity: a.quantity,
+          article,
           action: c.action,
           reason: c.reason,
-          ...(c.action === "exchange"
-            ? c.exchangeType === "same_model"
-              ? { exchange: { type: c.exchangeType, item_id: a.sku } }
-              : { exchange: { type: c.exchangeType, item_id: c.exchangeArticleSku, price: c.exchangePrice } }
-            : {}),
+          exchangeType: c.exchangeType,
+          exchangeItemId: c.exchangeType === "same_model" ? article.sku : c.exchangeArticleSku,
         };
-      }),
-    }),
-    [order.id, method, contact, selected, configs],
-  );
+      });
+      onSubmitted(await submitRequest(api, order, items, contact, method));
+    } catch (error) {
+      setSubmitError(error);
+      setSubmitting(false);
+    }
+  };
+  const next = () => {
+    if (!canGoNext) return;
+    if (step === Step.Validation) void confirm();
+    else setStep((s) => s + 1);
+  };
 
   const renderSelection = () => (
     <div className="space-y-2">
+      {notice}
       <InfoBanner text={t("selection.banner", { order: order.id })} />
       {eligible.length === 0 && (
         <InfoBanner tone="warning" text={t("selection.noneEligible", { states: settings.eligibleStates || "—" })} />
@@ -290,6 +298,12 @@ export function ExchangeWorkflow({
   const renderValidation = () => (
     <div className="space-y-3">
       <InfoBanner text={t("validation.banner")} />
+      {submitError !== undefined && (
+        <InfoBanner
+          tone="error"
+          text={t("submit.error", { detail: submitError instanceof Error ? submitError.message : String(submitError) })}
+        />
+      )}
       <div className="bg-white border border-gray-200 rounded-lg p-3 space-y-2.5 shadow-sm">
         <div className="grid grid-cols-2 gap-2.5">
           {contactField("firstName", "field.firstName")}
@@ -309,50 +323,16 @@ export function ExchangeWorkflow({
     </div>
   );
 
-  const renderConfirmation = () => (
-    <div className="text-center py-8 px-2">
-      <div className="w-14 h-14 bg-brand-light text-brand rounded-full flex items-center justify-center mx-auto mb-4">
-        <CheckIcon className="w-7 h-7" strokeWidth={3} />
-      </div>
-      <h2 className="text-xl font-bold text-gray-800 mb-1">{t("confirm.title")}</h2>
-      <p className="text-[13px] text-gray-500 max-w-sm mx-auto mb-4 leading-relaxed">
-        {rich("confirm.text", {
-          order: <strong>{order.id}</strong>,
-          email: <strong>{contact.email || t("confirm.customer")}</strong>,
-        })}
-      </p>
-      <details className="text-left max-w-xl mx-auto mb-6">
-        <summary className="text-[12px] font-semibold text-gray-500 cursor-pointer">{t("confirm.payload")}</summary>
-        <pre className="mt-2 p-3 bg-gray-900 text-gray-100 rounded-lg text-[11px] overflow-auto">
-          {JSON.stringify(request, null, 2)}
-        </pre>
-      </details>
-      <button
-        onClick={() => {
-          setStep(Step.Selection);
-          setSelectedIds([]);
-          setConfigs({});
-          setMethod("");
-          onReload();
-        }}
-        className="px-6 py-2 bg-brand text-white text-[14px] font-bold rounded-lg hover:bg-brand-dark transition-colors"
-      >
-        {t("confirm.done")}
-      </button>
-    </div>
-  );
-
   return (
     <>
-      {step !== Step.Confirmation && <StepIndicator currentStep={step} />}
+      <StepIndicator currentStep={step} />
       <main className="flex-grow max-w-2xl w-full mx-auto px-4 pb-20">
         {step === Step.Selection && renderSelection()}
         {step === Step.Configuration && renderConfiguration()}
         {step === Step.Method && renderMethod()}
         {step === Step.Validation && renderValidation()}
-        {step === Step.Confirmation && renderConfirmation()}
       </main>
-      {step !== Step.Confirmation && (
+      {
         <footer className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-3 z-50">
           <div className="max-w-2xl mx-auto flex items-center justify-between">
             <div>
@@ -404,12 +384,12 @@ export function ExchangeWorkflow({
                   canGoNext ? "" : "opacity-50 cursor-not-allowed"
                 }`}
               >
-                {t(step === Step.Validation ? "footer.confirm" : "footer.next")}
+                {submitting ? t("footer.submitting") : t(step === Step.Validation ? "footer.confirm" : "footer.next")}
               </button>
             </div>
           </div>
         </footer>
-      )}
+      }
     </>
   );
 }

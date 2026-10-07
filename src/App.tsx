@@ -3,6 +3,7 @@ import { ExchangeWorkflow } from "./components/ExchangeWorkflow";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { InfoBanner } from "./components/ui";
 import { useOneStockContext } from "./lib/context";
+import type { SubmitResult } from "./lib/exchange";
 import { createI18n, I18nProvider, normalizeLanguage, type I18n } from "./lib/i18n";
 import { ApiError, fetchOrder, resolveBaseUrl, toArticles, type RawOrder } from "./lib/onestock";
 import { useSettings } from "./lib/settings";
@@ -21,6 +22,7 @@ export default function App() {
   const [tab, setTab] = useState<Tab>("exchange");
   const [load, setLoad] = useState<LoadState>({ status: "idle" });
   const [reloadKey, setReloadKey] = useState(0);
+  const [submitted, setSubmitted] = useState<SubmitResult>();
 
   // UI language: the lang sent by OneStock, unless forced in Settings.
   const auto = settings.uiLanguage === "auto";
@@ -106,7 +108,25 @@ export default function App() {
               order={load.order}
               articles={articles}
               api={api}
-              onReload={reload}
+              notice={
+                submitted && (
+                  <InfoBanner
+                    tone="success"
+                    text={
+                      <>
+                        {t("submit.success", { count: submitted.returned })}
+                        {submitted.subOrderId && (
+                          <span className="block">{t("submit.subOrder", { id: submitted.subOrderId })}</span>
+                        )}
+                      </>
+                    }
+                  />
+                )
+              }
+              onSubmitted={(result) => {
+                setSubmitted(result);
+                reload();
+              }}
               onOpenSettings={() => setTab("settings")}
             />
           ) : (

@@ -43,6 +43,8 @@ export interface Settings {
   stockRequestName: string;
   /** Optional stock locations (comma separated endpoint ids). */
   stockEndpointIds: string;
+  /** State the returned / exchanged lines are moved to on confirmation. */
+  returnState: string;
   /** Line item group states eligible for return / exchange (comma separated). */
   eligibleStates: string;
   /** Comma separated; empty = default reasons in the interface language. */
@@ -76,6 +78,7 @@ export const DEFAULT_SETTINGS: Settings = {
   sheetFeatures: "description",
   stockRequestName: "detailed",
   stockEndpointIds: "",
+  returnState: "returning",
   eligibleStates: "fulfilled",
   returnReasons: "",
   exchangeReasons: "",

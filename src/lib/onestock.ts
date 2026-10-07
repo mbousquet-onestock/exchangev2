@@ -32,7 +32,7 @@ async function call<T>(
   settings: Settings,
   url: string,
   body: Record<string, unknown>,
-  { getSemantics = false }: { getSemantics?: boolean } = {},
+  { getSemantics = false, method = "POST" }: { getSemantics?: boolean; method?: "POST" | "PATCH" } = {},
 ): Promise<T> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   // GET routes take a JSON body: send them as POST + method override.
@@ -41,7 +41,7 @@ async function call<T>(
   const target = settings.useProxy ? `/api/proxy?url=${encodeURIComponent(url)}` : url;
   let response: Response;
   try {
-    response = await fetch(target, { method: "POST", headers, body: JSON.stringify(body) });
+    response = await fetch(target, { method, headers, body: JSON.stringify(body) });
   } catch (error) {
     throw new ApiError("network", (error as Error).message, { url });
   }
@@ -94,10 +94,16 @@ export async function authed<T>(
   path: string,
   body: Record<string, unknown>,
   getSemantics: boolean,
+  method: "POST" | "PATCH" = "POST",
 ): Promise<T> {
   const run = async (forceRefresh: boolean) => {
     const token = await getToken(settings, conn, forceRefresh);
-    return call<T>(settings, `${conn.baseUrl}${path}`, { site_id: conn.siteId, token, ...body }, { getSemantics });
+    return call<T>(
+      settings,
+      `${conn.baseUrl}${path}`,
+      { site_id: conn.siteId, token, ...body },
+      { getSemantics, method },
+    );
   };
   try {
     return await run(false);
@@ -117,19 +123,27 @@ export interface RawOrder {
   id: string;
   state?: string;
   date?: number;
+  types?: string[];
+  sales_channel?: string;
+  information?: Record<string, unknown>;
   customer?: {
     first_name?: string;
     last_name?: string;
     email?: string;
     phone_number?: string;
+    [key: string]: unknown;
   };
-  delivery?: { destination?: { address?: RawAddress } };
-  pricing_details?: { currency?: string };
+  delivery?: {
+    type?: string;
+    destination?: { address?: RawAddress; endpoint_id?: string; information?: Record<string, unknown> };
+  };
+  pricing_details?: { currency?: string; address?: RawAddress };
   order_items?: RawOrderItem[];
   line_item_groups?: RawLineItemGroup[];
 }
 
 export interface RawAddress {
+  [key: string]: unknown;
   city?: string;
   zip_code?: string;
   lines?: string[];
@@ -177,9 +191,15 @@ export async function fetchOrder(
     "id",
     "state",
     "date",
+    "types",
+    "sales_channel",
+    "information",
     "customer",
+    "delivery.type",
     "delivery.destination.address",
+    "delivery.destination.endpoint_id",
     "pricing_details.currency",
+    "pricing_details.address",
     "order_items._id",
     "order_items.item_id",
     "order_items.quantity",
