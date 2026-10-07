@@ -32,6 +32,14 @@ export interface Settings {
   featureColor: string;
   featureSize: string;
   featureImage: string;
+  /** Item feature holding the price, used for substitutes (GET /items). */
+  featurePrice: string;
+  /** Stock query (OMC > Configuration > Stock > Stock Queries) used by GET /stock_export. */
+  stockRequestName: string;
+  /** Optional stock locations (comma separated endpoint ids). */
+  stockEndpointIds: string;
+  /** Max number of catalog items fetched to find variants / substitutes. */
+  catalogLimit: number;
   /** Line item group states eligible for return / exchange (comma separated). */
   eligibleStates: string;
   /** Proposed values for a same-model exchange (comma separated). */
@@ -63,6 +71,10 @@ export const DEFAULT_SETTINGS: Settings = {
   featureColor: "color",
   featureSize: "size",
   featureImage: "image_url",
+  featurePrice: "price",
+  stockRequestName: "",
+  stockEndpointIds: "",
+  catalogLimit: 100,
   eligibleStates: "fulfilled",
   exchangeSizes: "XS, S, M, L, XL",
   exchangeColors: "Black, Grey, White, Navy, Red",
