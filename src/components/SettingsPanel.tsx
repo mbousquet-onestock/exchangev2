@@ -211,6 +211,23 @@ export function SettingsPanel({
           {text("eligibleStates", "settings.eligibleStates", t("settings.eligibleStatesHint"))}
           {text("returnState", "settings.returnState", t("settings.returnStateHint"))}
         </div>
+        {checkbox("closeOnConfirm", "settings.closeOnConfirm", t("settings.closeOnConfirmHint"))}
+        {draft.closeOnConfirm &&
+          text("closeMessageType", "settings.closeMessageType", t("settings.closeMessageTypeHint"))}
+        {checkbox("refreshOnConfirm", "settings.refreshOnConfirm", t("settings.refreshOnConfirmHint"))}
+        {draft.refreshOnConfirm && (
+          <div className="grid grid-cols-2 gap-2.5">
+            {text("refreshMessageType", "settings.refreshMessageType")}
+            {text(
+              "refreshUrl",
+              "settings.refreshUrl",
+              t("settings.refreshUrlHint"),
+              "text",
+              "https://admin-qualif.onestock-retail.com/{site_id}/order/detail/{order_id}",
+            )}
+          </div>
+        )}
+        {text("subOrderIdFormat", "settings.subOrderIdFormat", t("settings.subOrderIdFormatHint"))}
         <div className="grid grid-cols-4 gap-2.5">
           {text("featureName", "settings.featureName")}
           {text("featureColor", "settings.featureColor")}

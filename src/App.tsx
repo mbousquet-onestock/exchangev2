@@ -126,6 +126,19 @@ export default function App() {
               onSubmitted={(result) => {
                 setSubmitted(result);
                 reload();
+                const refreshUrl = settings.refreshOnConfirm
+                  ? (settings.refreshUrl.trim() || context.urlParams.parent_url || "")
+                      .replace("{site_id}", siteId)
+                      .replace("{order_id}", orderId)
+                  : "";
+                context.finish({
+                  messages: [
+                    settings.closeOnConfirm ? settings.closeMessageType : "",
+                    settings.refreshOnConfirm ? settings.refreshMessageType : "",
+                  ].filter(Boolean),
+                  refreshUrl,
+                  close: settings.closeOnConfirm,
+                });
               }}
               onOpenSettings={() => setTab("settings")}
             />

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 /**
  * OneStock UI Extension context.
@@ -8,6 +8,14 @@ import { useEffect, useMemo, useState } from "react";
  * extension posts `extension_ready` to the parent and receives `onestock_data`.
  * The extension_signature is deliberately NOT verified here (no backend / JWT).
  */
+export interface FinishOptions {
+  /** postMessage types sent to the OneStock parent page (e.g. extension_close, extension_refresh). */
+  messages: string[];
+  /** Origin page to reload; when empty, nothing is navigated. */
+  refreshUrl?: string;
+  close: boolean;
+}
+
 export interface OneStockContext {
   embedded: boolean;
   received: boolean;
@@ -20,6 +28,8 @@ export interface OneStockContext {
   hostApp?: string;
   lang?: string;
   locale?: string;
+  /** Ends the extension after a confirmation: notifies OneStock, refreshes the origin page and closes. */
+  finish: (options: FinishOptions) => void;
 }
 
 function str(value: unknown): string | undefined {
@@ -39,19 +49,55 @@ function pickOrderId(data: Record<string, unknown> | null, params: Record<string
   return params.order_id ?? params.orderId;
 }
 
+function parentOriginOf(urlParams: Record<string, string>): string {
+  try {
+    if (urlParams.parent_url) return new URL(urlParams.parent_url).origin;
+  } catch {
+    // invalid parent_url: keep wildcard
+  }
+  return "*";
+}
+
 export function useOneStockContext(): OneStockContext {
   const urlParams = useMemo(() => Object.fromEntries(new URLSearchParams(window.location.search)), []);
   const embedded = window.parent !== window;
   const [data, setData] = useState<Record<string, unknown> | null>(null);
 
+  const finish = useCallback(
+    ({ messages, refreshUrl, close }: FinishOptions) => {
+      const parentOrigin = parentOriginOf(urlParams);
+      if (embedded) for (const type of messages) window.parent.postMessage({ type }, parentOrigin);
+
+      // Opened as a popup / new tab: refresh the opener, then close ourselves.
+      if (window.opener && !window.opener.closed) {
+        if (refreshUrl) {
+          try {
+            window.opener.location.href = refreshUrl;
+          } catch {
+            // navigation refused: OneStock messages above are the only signal
+          }
+        }
+        if (close) window.close();
+        return;
+      }
+      // Embedded in an iframe: reloading the top page also removes the extension.
+      if (embedded && refreshUrl) {
+        try {
+          window.top!.location.href = refreshUrl;
+          return;
+        } catch {
+          // top navigation blocked by the iframe sandbox
+        }
+      }
+      // Only effective when the page was opened by script.
+      if (close) window.close();
+    },
+    [embedded, urlParams],
+  );
+
   useEffect(() => {
     if (!embedded) return;
-    let parentOrigin = "*";
-    try {
-      if (urlParams.parent_url) parentOrigin = new URL(urlParams.parent_url).origin;
-    } catch {
-      // invalid parent_url: keep wildcard
-    }
+    const parentOrigin = parentOriginOf(urlParams);
 
     const onMessage = (event: MessageEvent) => {
       if (parentOrigin !== "*" && event.origin !== parentOrigin) return;
@@ -86,6 +132,7 @@ export function useOneStockContext(): OneStockContext {
     userId: str(data?.user_id) ?? urlParams.user_id,
     apiUrl: str(data?.api_url),
     hostApp: str(data?.host_app) ?? urlParams.host_app,
+    finish,
     lang: str(data?.lang) ?? urlParams.lang,
     locale: str(data?.locale) ?? urlParams.locale,
   };

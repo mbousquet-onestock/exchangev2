@@ -60,7 +60,15 @@ from the OneStock API and shows the articles eligible for an exchange.
   information are copied, and the exchanged items (replacement or chosen
   substitute) are added at 0.
 
-The order is then reloaded and the result is shown above the items.
+The sub-order id is `{order_id}-S{n}` (format in Settings): `-S1`, or `-S2`,
+`-S3`… when the id already exists (checked with `GET /orders/{id}`).
+
+Then the extension ends: it posts `extension_close` and `extension_refresh`
+to OneStock (message types in Settings; not documented by OneStock), and
+reloads the page it was opened from (`parent_url`, or the URL set in
+Settings): the opener when opened as a popup / new tab (then the window
+closes), the top page when embedded in an iframe. If none of this is
+possible, the order is reloaded and the result is shown above the items.
 
 ## CORS proxy
 

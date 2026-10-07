@@ -43,6 +43,18 @@ export interface Settings {
   stockRequestName: string;
   /** Optional stock locations (comma separated endpoint ids). */
   stockEndpointIds: string;
+  /** Close the extension once the request is confirmed. */
+  closeOnConfirm: boolean;
+  /** postMessage type sent to OneStock to close the extension. */
+  closeMessageType: string;
+  /** Refresh the OneStock page the extension was opened from once the request is confirmed. */
+  refreshOnConfirm: boolean;
+  /** postMessage type sent to OneStock to refresh its page. */
+  refreshMessageType: string;
+  /** Page to reload ({site_id}, {order_id} replaced); empty = parent_url sent by OneStock. */
+  refreshUrl: string;
+  /** Id of the exchange sub-order: {order_id} and {n} (1, 2… first free number) are replaced. */
+  subOrderIdFormat: string;
   /** State the returned / exchanged lines are moved to on confirmation. */
   returnState: string;
   /** Line item group states eligible for return / exchange (comma separated). */
@@ -78,6 +90,12 @@ export const DEFAULT_SETTINGS: Settings = {
   sheetFeatures: "description",
   stockRequestName: "detailed",
   stockEndpointIds: "",
+  closeOnConfirm: true,
+  closeMessageType: "extension_close",
+  refreshOnConfirm: true,
+  refreshMessageType: "extension_refresh",
+  refreshUrl: "",
+  subOrderIdFormat: "{order_id}-S{n}",
   returnState: "returning",
   eligibleStates: "fulfilled",
   returnReasons: "",

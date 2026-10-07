@@ -1,4 +1,4 @@
-import { authed, type Article, type RawAddress, type RawOrder } from "./onestock";
+import { ApiError, authed, type Article, type RawAddress, type RawOrder } from "./onestock";
 import type { ApiContext } from "./useCatalog";
 
 export interface Contact {
@@ -62,15 +62,40 @@ export async function submitRequest(
   const exchanges = items.filter((i) => i.action === "exchange" && i.exchangeItemId);
   if (!exchanges.length) return { returned: items.length };
 
-  const subOrder = buildSubOrder(order, exchanges, contact, returnMethod);
+  const id = await nextSubOrderId(settings, conn, order.id);
+  const subOrder = buildSubOrder(id, order, exchanges, contact, returnMethod);
   await authed(settings, conn, "/orders", { order: subOrder }, false);
   return { returned: items.length, subOrderId: subOrder.id };
 }
 
+/** First free sub-order id: {order_id}-S1, -S2… (format set in Settings). */
+async function nextSubOrderId(
+  settings: ApiContext["settings"],
+  conn: ApiContext["conn"],
+  orderId: string,
+): Promise<string> {
+  const format = settings.subOrderIdFormat.includes("{n}") ? settings.subOrderIdFormat : "{order_id}-S{n}";
+  for (let n = 1; n <= 50; n++) {
+    const id = format.replace("{order_id}", orderId).replace("{n}", String(n));
+    try {
+      await authed(settings, conn, `/orders/${encodeURIComponent(id)}`, { fields: ["id"] }, true);
+    } catch (error) {
+      if (error instanceof ApiError && error.details.status === 404) return id;
+      throw error;
+    }
+  }
+  throw new Error(`No free sub-order id for ${orderId}`);
+}
+
 /** Copy of the initial order (customer, delivery, types, channel…) holding the exchanged items at 0. */
-export function buildSubOrder(order: RawOrder, exchanges: RequestedItem[], contact: Contact, returnMethod: string) {
+export function buildSubOrder(
+  id: string,
+  order: RawOrder,
+  exchanges: RequestedItem[],
+  contact: Contact,
+  returnMethod: string,
+) {
   const currency = order.pricing_details?.currency ?? exchanges[0].article.currency;
-  const stamp = Date.now().toString(36).toUpperCase();
   const personal = {
     first_name: contact.firstName || undefined,
     last_name: contact.lastName || order.customer?.last_name || "-",
@@ -88,7 +113,7 @@ export function buildSubOrder(order: RawOrder, exchanges: RequestedItem[], conta
   };
 
   return {
-    id: `${order.id}-EX${stamp}`,
+    id,
     parent_order_id: order.parent_order_id || order.id,
     types: order.types?.length ? order.types : ["ffs"],
     ...(order.sales_channel ? { sales_channel: order.sales_channel } : {}),

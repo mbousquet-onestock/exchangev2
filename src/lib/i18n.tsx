@@ -4,6 +4,19 @@ export const LANGUAGES = ["en", "fr", "es", "de", "it"] as const;
 export type Language = (typeof LANGUAGES)[number];
 
 const en = {
+  "settings.closeOnConfirm": "Close the window after confirmation",
+  "settings.closeOnConfirmHint":
+    "Sends the message below to OneStock and closes the window when it was opened as a popup / new tab.",
+  "settings.closeMessageType": "Close message (postMessage type)",
+  "settings.closeMessageTypeHint": "Message sent to the OneStock parent page, e.g. extension_close.",
+  "settings.refreshOnConfirm": "Refresh the OneStock page after confirmation",
+  "settings.refreshOnConfirmHint":
+    "Sends the refresh message, then reloads the page the extension was opened from (which also closes it when embedded).",
+  "settings.refreshMessageType": "Refresh message (postMessage type)",
+  "settings.refreshUrl": "Page to reload",
+  "settings.refreshUrlHint": "Empty = parent_url sent by OneStock. {site_id} and {order_id} are replaced.",
+  "settings.subOrderIdFormat": "Exchange sub-order id",
+  "settings.subOrderIdFormatHint": "{order_id} = initial order, {n} = 1, 2… (first id that does not exist yet).",
   "selection.bannerWithParent": "Order {order} (parent order {parent}) — select items to return or exchange",
   "footer.submitting": "Sending…",
   "submit.error": "The request could not be saved: {detail}",
@@ -174,6 +187,19 @@ export type MessageKey = keyof typeof en;
 type Dictionary = Record<MessageKey, string>;
 
 const fr: Dictionary = {
+  "settings.closeOnConfirm": "Fermer la fenêtre après confirmation",
+  "settings.closeOnConfirmHint":
+    "Envoie le message ci-dessous à OneStock et ferme la fenêtre si elle a été ouverte en popup / nouvel onglet.",
+  "settings.closeMessageType": "Message de fermeture (type postMessage)",
+  "settings.closeMessageTypeHint": "Message envoyé à la page OneStock parente, ex. extension_close.",
+  "settings.refreshOnConfirm": "Rafraîchir la page OneStock après confirmation",
+  "settings.refreshOnConfirmHint":
+    "Envoie le message de rafraîchissement puis recharge la page d'où l'extension a été ouverte (ce qui la ferme aussi si elle est intégrée).",
+  "settings.refreshMessageType": "Message de rafraîchissement (type postMessage)",
+  "settings.refreshUrl": "Page à recharger",
+  "settings.refreshUrlHint": "Vide = parent_url envoyée par OneStock. {site_id} et {order_id} sont remplacés.",
+  "settings.subOrderIdFormat": "Id de la sous-commande d'échange",
+  "settings.subOrderIdFormatHint": "{order_id} = commande initiale, {n} = 1, 2… (premier id qui n'existe pas encore).",
   "selection.bannerWithParent":
     "Commande {order} (commande parente {parent}) — sélectionnez les articles à retourner ou échanger",
   "footer.submitting": "Envoi…",
