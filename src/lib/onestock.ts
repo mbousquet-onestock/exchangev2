@@ -70,6 +70,8 @@ async function call<T>(
 let cachedToken: { key: string; token: string } | null = null;
 
 export async function getToken(settings: Settings, conn: ResolvedConnection, forceRefresh = false): Promise<string> {
+  // Credentials stored in the Settings API: the proxy adds the token.
+  if (settings.serverAuth && !(settings.authMode === "token" ? settings.token : settings.password)) return "";
   if (settings.authMode === "token") {
     if (!settings.token) throw new ApiError("noToken", "No API token configured");
     return settings.token;

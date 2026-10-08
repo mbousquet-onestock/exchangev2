@@ -18,7 +18,7 @@ type LoadState =
 
 export default function App() {
   const context = useOneStockContext();
-  const { settings, save } = useSettings();
+  const { settings, save, storage } = useSettings(context.siteId);
   const [tab, setTab] = useState<Tab>("exchange");
   const [load, setLoad] = useState<LoadState>({ status: "idle" });
   const [reloadKey, setReloadKey] = useState(0);
@@ -45,7 +45,8 @@ export default function App() {
     const timer = setTimeout(() => setContextWaitOver(true), 1500);
     return () => clearTimeout(timer);
   }, [contextWaitOver]);
-  const ready = context.received || contextWaitOver;
+  // Also wait for the settings of the Settings API (or the local fallback).
+  const ready = (context.received || contextWaitOver) && storage.mode !== "loading";
 
   const baseUrl = resolveBaseUrl(settings, siteId, context.apiUrl);
   const api = useMemo(
@@ -74,7 +75,10 @@ export default function App() {
       <div className="min-h-screen flex flex-col">
         {tab === "settings" && (
           <SettingsPanel
+            // Fresh draft whenever the stored settings change (remote load, save).
+            key={`${storage.mode}|${JSON.stringify(settings)}`}
             settings={settings}
+            storage={storage}
             context={context}
             onSave={save}
             onClose={() => setTab("exchange")}

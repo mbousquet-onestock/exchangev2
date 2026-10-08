@@ -2,7 +2,7 @@ import { useState, type ReactNode } from "react";
 import type { OneStockContext } from "../lib/context";
 import { LANGUAGES, useI18n, type MessageKey } from "../lib/i18n";
 import { resolveBaseUrl } from "../lib/onestock";
-import type { Settings } from "../lib/settings";
+import type { Settings, SettingsScope, SettingsStorage } from "../lib/settings";
 import { DEFAULT_SETTINGS } from "../lib/settings";
 import { FieldLabel, InfoBanner, inputClass, selectClass } from "./ui";
 
@@ -23,19 +23,42 @@ function Hint({ children }: { children: ReactNode }) {
 export function SettingsPanel({
   settings,
   context,
+  storage,
   onSave,
   onTest,
   onClose,
 }: {
   settings: Settings;
   context: OneStockContext;
-  onSave: (s: Settings) => void;
+  storage: SettingsStorage;
+  onSave: (s: Settings, scope: SettingsScope) => Promise<void>;
   onTest: () => void;
   onClose: () => void;
 }) {
   const { t } = useI18n();
   const [draft, setDraft] = useState(settings);
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string>();
+  const [scope, setScope] = useState<SettingsScope>("site");
+  const remote = storage.mode === "remote";
+  const submit = async (then?: () => void) => {
+    setSaving(true);
+    setSaveError(undefined);
+    try {
+      await onSave(draft, scope);
+      // Stored secrets are never read back: empty their inputs again.
+      if (remote) setDraft((d) => ({ ...d, token: "", password: "" }));
+      setSaved(true);
+      then?.();
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setSaving(false);
+    }
+  };
+  /** Placeholder of a secret input: tells whether a value is stored in the Settings API. */
+  const secretHint = (key: string) => (storage.secrets.includes(key) ? t("settings.secretStored") : undefined);
   const dirty = JSON.stringify(draft) !== JSON.stringify(settings);
 
   const set = <K extends keyof Settings>(key: K, value: Settings[K]) => {
@@ -78,7 +101,15 @@ export function SettingsPanel({
 
   return (
     <main className="max-w-2xl w-full mx-auto px-4 py-4 pb-24 space-y-4">
-      <InfoBanner text={t("settings.stored")} />
+      <InfoBanner
+        tone={remote ? "info" : "warning"}
+        text={
+          remote
+            ? t("settings.storedRemote", { site: storage.siteId || t("settings.allSites"), env: storage.environment })
+            : t("settings.storedLocal", { detail: storage.error ?? "" })
+        }
+      />
+      {saveError && <InfoBanner tone="error" text={t("settings.saveError", { detail: saveError })} />}
 
       <Section title="settings.context">
         <div className="grid grid-cols-2 gap-2 text-[12px]">
@@ -176,11 +207,11 @@ export function SettingsPanel({
           ))}
         </div>
         {draft.authMode === "token" ? (
-          text("token", "settings.token", t("settings.tokenHint"), "password")
+          text("token", "settings.token", t("settings.tokenHint"), "password", secretHint("onestock_token"))
         ) : (
           <div className="grid grid-cols-2 gap-2.5">
             {text("userId", "settings.user", t("settings.userHint"))}
-            {text("password", "settings.password", undefined, "password")}
+            {text("password", "settings.password", undefined, "password", secretHint("onestock_password"))}
           </div>
         )}
       </Section>
@@ -257,11 +288,11 @@ export function SettingsPanel({
       </Section>
 
       <footer className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-3 z-50">
-        <div className="max-w-2xl mx-auto flex items-center justify-between gap-2">
+        <div className="max-w-2xl mx-auto flex flex-wrap items-center justify-between gap-2">
           <div className="flex gap-2">
             <button
               onClick={onClose}
-              className="px-4 py-2 border border-gray-200 text-gray-600 text-[13px] font-bold rounded-lg hover:bg-gray-50"
+              className="px-4 py-2 border border-gray-200 text-gray-600 text-[13px] font-bold rounded-lg whitespace-nowrap hover:bg-gray-50"
             >
               {t("settings.backToExchange")}
             </button>
@@ -270,31 +301,36 @@ export function SettingsPanel({
                 setDraft({ ...DEFAULT_SETTINGS });
                 setSaved(false);
               }}
-              className="px-4 py-2 border border-gray-200 text-gray-600 text-[13px] font-bold rounded-lg hover:bg-gray-50"
+              className="px-4 py-2 border border-gray-200 text-gray-600 text-[13px] font-bold rounded-lg whitespace-nowrap hover:bg-gray-50"
             >
               {t("settings.reset")}
             </button>
           </div>
           <div className="flex items-center gap-2">
+            {remote && (
+              <select
+                className={`${selectClass} !w-auto !pr-8 text-[12px]`}
+                value={scope}
+                onChange={(e) => setScope(e.target.value as SettingsScope)}
+                title={t("settings.scope")}
+              >
+                <option value="site">{t("settings.scopeSite", { site: storage.siteId || "—" })}</option>
+                <option value="global">{t("settings.scopeGlobal")}</option>
+              </select>
+            )}
             {saved && !dirty && <span className="text-[12px] text-brand font-semibold">{t("settings.saved")}</span>}
             <button
-              onClick={() => {
-                onSave(draft);
-                setSaved(true);
-                onTest();
-              }}
-              className="px-4 py-2 border border-brand text-brand text-[13px] font-bold rounded-lg hover:bg-brand/5"
+              disabled={saving}
+              onClick={() => submit(onTest)}
+              className="px-4 py-2 border border-brand text-brand text-[13px] font-bold rounded-lg whitespace-nowrap hover:bg-brand/5"
             >
               {t("settings.saveAndLoad")}
             </button>
             <button
-              onClick={() => {
-                onSave(draft);
-                setSaved(true);
-              }}
-              disabled={!dirty}
-              className={`px-6 py-2 bg-brand text-white text-[13px] font-bold rounded-lg hover:bg-brand-dark ${
-                dirty ? "" : "opacity-50 cursor-not-allowed"
+              onClick={() => submit()}
+              disabled={!dirty || saving}
+              className={`px-6 py-2 bg-brand text-white text-[13px] font-bold rounded-lg whitespace-nowrap hover:bg-brand-dark ${
+                dirty && !saving ? "" : "opacity-50 cursor-not-allowed"
               }`}
             >
               {t("settings.save")}

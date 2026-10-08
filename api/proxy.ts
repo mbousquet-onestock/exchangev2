@@ -1,12 +1,45 @@
-// Minimal CORS proxy towards the OneStock API.
-// Browsers cannot always call https://{site_id}.api.onestock-retail.com directly
-// (CORS), so the front-end can route its calls through /api/proxy?url=<target>.
-// Only OneStock hosts are allowed as targets.
-
-export const config = { runtime: "edge" };
+// Proxy towards the OneStock API: works around CORS (/api/proxy?url=<target>) and
+// adds the OneStock credentials kept in the Settings API, so that the token never
+// reaches the browser. Only OneStock hosts are allowed as targets.
+import { readMerged, settingsConfigured } from "./_lib/settings-store";
 
 const ALLOWED_HOST = /(^|\.)onestock-retail\.com$/i;
 const FORWARDED_HEADERS = ["content-type", "x-http-method-override", "auth-user", "auth-password"];
+
+/** Tokens obtained through POST /login with the stored credentials, per site / environment. */
+const loginTokens = new Map<string, { token: string; expires: number }>();
+const LOGIN_TTL_MS = 10 * 60 * 1000;
+
+/** "qualif" for *.api.qualif.onestock-retail.com, else "prod". */
+function environmentOf(host: string): string {
+  return /\.qualif\./i.test(host) ? "qualif" : "prod";
+}
+
+async function serverToken(target: URL, siteId: string, forceLogin: boolean): Promise<string | undefined> {
+  if (!settingsConfigured() || !siteId) return undefined;
+  const environment = environmentOf(target.hostname);
+  const { values } = await readMerged(siteId, environment, { withSecrets: true });
+  if (values.onestock_token && !forceLogin) return values.onestock_token;
+
+  const userId = values.onestock_user_id;
+  const password = values.onestock_password;
+  if (!userId || !password) return values.onestock_token;
+  const cacheKey = `${environment}|${siteId}|${userId}`;
+  const cached = loginTokens.get(cacheKey);
+  if (cached && cached.expires > Date.now() && !forceLogin) return cached.token;
+
+  // Same host and API version as the target call.
+  const version = target.pathname.match(/^\/v\d+/)?.[0] ?? "";
+  const response = await fetch(`${target.origin}${version}/login`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ site_id: siteId, user_id: userId, password }),
+  });
+  if (!response.ok) return undefined;
+  const { token } = (await response.json()) as { token?: string };
+  if (token) loginTokens.set(cacheKey, { token, expires: Date.now() + LOGIN_TTL_MS });
+  return token;
+}
 
 export async function proxyRequest(request: Request): Promise<Response> {
   const target = new URL(request.url).searchParams.get("url");
@@ -29,11 +62,28 @@ export async function proxyRequest(request: Request): Promise<Response> {
   }
 
   const hasBody = request.method !== "GET" && request.method !== "HEAD";
-  const upstream = await fetch(targetUrl, {
-    method: request.method,
-    headers,
-    body: hasBody ? await request.text() : undefined,
-  });
+  const rawBody = hasBody ? await request.text() : undefined;
+  let body: Record<string, unknown> | undefined;
+  try {
+    body = rawBody ? JSON.parse(rawBody) : undefined;
+  } catch {
+    body = undefined;
+  }
+  // No token from the browser: use the credentials of the Settings API (except for /login itself).
+  const injectToken = !!body && !body.token && !/\/login$/.test(targetUrl.pathname);
+
+  const send = async (forceLogin: boolean) => {
+    let payload = rawBody;
+    if (injectToken && body) {
+      const token = await serverToken(targetUrl, String(body.site_id ?? ""), forceLogin);
+      if (token) payload = JSON.stringify({ ...body, token });
+    }
+    return fetch(targetUrl, { method: request.method, headers, body: payload });
+  };
+
+  let upstream = await send(false);
+  // Expired login token: log in again once.
+  if (upstream.status === 401 && injectToken) upstream = await send(true);
 
   const responseHeaders = new Headers();
   responseHeaders.set("content-type", upstream.headers.get("content-type") ?? "application/json");
@@ -46,4 +96,8 @@ function json(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 }
 
-export default proxyRequest;
+// Vercel Node.js functions (Web Request / Response signature).
+export const GET = proxyRequest;
+export const POST = proxyRequest;
+export const PATCH = proxyRequest;
+export const PUT = proxyRequest;

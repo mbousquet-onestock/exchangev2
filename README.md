@@ -77,11 +77,44 @@ Settings): the opener when opened as a popup / new tab (then the window
 closes), the top page when embedded in an iframe. If none of this is
 possible, the order is reloaded and the result is shown above the items.
 
+## Settings storage (Settings API)
+
+The app settings are stored in the **Settings API** of the Extensions app
+(`https://extensions-lemon.vercel.app/api/settings`), through the server
+function `api/settings.ts`, so that the API key never reaches the browser.
+
+- Read: `GET /api/settings?site_id=&environment=` returns the merged values for
+  the site and environment (`qualif` / `prod`), by priority
+  site + `exchange` > site + `*` > global + `exchange` > global + `*`.
+  Secrets (`onestock_token`, `onestock_password`) are never returned, only
+  whether they exist.
+- Write: from the Settings tab, for *this site* or *all sites* (`site_id` empty),
+  `extension_id` = `exchange`. Keys are the field names in snake_case
+  (`stock_request_name`, `return_state`…); the OneStock credentials use
+  `onestock_token`, `onestock_user_id`, `onestock_password`.
+- The site / order fallback ids and the environment stay in the browser: they
+  select which settings to read.
+- When the Settings API is not configured or unreachable, the app falls back on
+  the browser storage (`localStorage`), as before.
+
+The OneStock credentials are added server-side by the proxy: when a call has no
+token, `api/proxy.ts` reads `onestock_token` (or logs in with
+`onestock_user_id` / `onestock_password`) from the Settings API for the call's
+site and environment. Values are decrypted by the API (`decrypt=1`), or locally
+with `SETTINGS_ENCRYPTION_KEY` (`api/_lib/settings-secrets.ts`, AES-256-GCM
+`enc:v1:`) when the API cannot.
+
+Server environment variables (Vercel → Settings → Environment Variables, or
+`.env.local` for `npm run dev`; see `.env.example`): `SETTINGS_API_URL`,
+`SETTINGS_API_KEY`, `SETTINGS_ENCRYPTION_KEY` (optional), `SETTINGS_EXTENSION_ID`
+(default `exchange`).
+
 ## CORS proxy
 
 Browsers may not be allowed to call `https://{site_id}.api(.qualif).onestock-retail.com`
-directly. `api/proxy.ts` is a Vercel Edge Function (also served by `vite dev`)
-that forwards calls to `*.onestock-retail.com` only. Toggle it in Settings.
+directly. `api/proxy.ts` is a Vercel function (Node.js, also served by `vite dev`)
+that forwards calls to `*.onestock-retail.com` only, and adds the token kept in
+the Settings API. It is always used when the settings come from the Settings API.
 
 ## Development
 

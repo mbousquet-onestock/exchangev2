@@ -4,6 +4,15 @@ export const LANGUAGES = ["en", "fr", "es", "de", "it"] as const;
 export type Language = (typeof LANGUAGES)[number];
 
 const en = {
+  "settings.storedRemote":
+    "Settings stored in the Settings API — site {site}, environment {env}. Secrets (token, password) stay on the server.",
+  "settings.storedLocal": "Settings API unavailable ({detail}) — settings stored in this browser only.",
+  "settings.allSites": "all sites",
+  "settings.saveError": "Settings could not be saved: {detail}",
+  "settings.secretStored": "•••••••• stored — leave empty to keep it",
+  "settings.scope": "Save for",
+  "settings.scopeSite": "This site ({site})",
+  "settings.scopeGlobal": "All sites",
   "article.returnUntil": "Return possible until {date}",
   "article.notReturnable": "Not returnable — exchange only for breakage or carrier loss",
   "article.returnExpired": "Withdrawal period over since {date} — exchange only for breakage or carrier loss",
@@ -122,7 +131,6 @@ const en = {
   "error.network": "Network error calling {url}: {detail}.",
   "error.networkCors": "This is often a CORS issue — try enabling the proxy in Settings.",
 
-  "settings.stored": "Settings are stored in this browser only (localStorage).",
   "settings.context": "OneStock context",
   "settings.mode": "Mode",
   "settings.embedded": "Embedded (iframe)",
@@ -195,6 +203,16 @@ export type MessageKey = keyof typeof en;
 type Dictionary = Record<MessageKey, string>;
 
 const fr: Dictionary = {
+  "settings.storedRemote":
+    "Paramètres enregistrés dans l'API Settings — site {site}, environnement {env}. Les secrets (token, mot de passe) restent côté serveur.",
+  "settings.storedLocal":
+    "API Settings indisponible ({detail}) — paramètres enregistrés dans ce navigateur uniquement.",
+  "settings.allSites": "tous les sites",
+  "settings.saveError": "Les paramètres n'ont pas pu être enregistrés : {detail}",
+  "settings.secretStored": "•••••••• enregistré — laisser vide pour le conserver",
+  "settings.scope": "Enregistrer pour",
+  "settings.scopeSite": "Ce site ({site})",
+  "settings.scopeGlobal": "Tous les sites",
   "article.returnUntil": "Retour possible jusqu'au {date}",
   "article.notReturnable": "Non retournable — échange uniquement en cas de casse ou perte transporteur",
   "article.returnExpired":
@@ -318,7 +336,6 @@ const fr: Dictionary = {
   "error.network": "Erreur réseau lors de l'appel à {url} : {detail}.",
   "error.networkCors": "C'est souvent un problème de CORS — activez le proxy dans les Paramètres.",
 
-  "settings.stored": "Les paramètres sont stockés uniquement dans ce navigateur (localStorage).",
   "settings.context": "Contexte OneStock",
   "settings.mode": "Mode",
   "settings.embedded": "Intégré (iframe)",
