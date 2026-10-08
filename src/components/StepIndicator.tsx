@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import { useI18n, type MessageKey } from "../lib/i18n";
 import { CheckIcon } from "./ui";
 
@@ -15,44 +16,41 @@ const STEPS: { id: Step; label: MessageKey }[] = [
   { id: Step.Validation, label: "steps.validation" },
 ];
 
+/** Circles linked by a line through their centres, spread over the content width; labels are for screen readers. */
 export function StepIndicator({ currentStep }: { currentStep: Step }) {
   const { t } = useI18n();
   return (
-    <div className="w-full py-3 mb-2 border-b border-gray-100 bg-white">
-      <div className="max-w-xl mx-auto flex items-center justify-between px-4 relative">
-        <div className="absolute top-1/2 left-0 w-full h-0.5 bg-gray-200 -translate-y-[1.2rem] z-0 px-12">
-          <div
-            className="h-full bg-brand transition-all duration-300"
-            style={{ width: `${((currentStep - 1) / (STEPS.length - 1)) * 100}%` }}
-          />
-        </div>
-        {STEPS.map((step) => {
+    <nav className="w-full bg-white mb-2">
+      <ol className="max-w-2xl mx-auto px-4 py-3 flex items-center">
+        {STEPS.map((step, index) => {
           const active = currentStep === step.id;
           const done = currentStep > step.id;
           return (
-            <div key={step.id} className="flex flex-col items-center relative z-10">
-              <div
-                className={`w-6 h-6 rounded-full border-[3px] flex items-center justify-center transition-all duration-300 ${
-                  active
-                    ? "border-brand bg-white ring-2 ring-brand/10"
-                    : done
-                      ? "border-brand bg-brand"
-                      : "border-gray-200 bg-white"
+            <Fragment key={step.id}>
+              {index > 0 && (
+                <li
+                  aria-hidden
+                  className={`flex-1 h-0.5 transition-colors duration-300 ${done || active ? "bg-brand" : "bg-gray-200"}`}
+                />
+              )}
+              <li
+                title={t(step.label)}
+                aria-current={active ? "step" : undefined}
+                className={`w-7 h-7 flex-shrink-0 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
+                  done ? "border-brand bg-brand" : active ? "border-brand bg-white" : "border-gray-200 bg-white"
                 }`}
               >
+                <span className="sr-only">{t(step.label)}</span>
                 {done ? (
-                  <CheckIcon className="w-3 h-3 text-white" />
+                  <CheckIcon className="w-3.5 h-3.5 text-white" />
                 ) : (
-                  <div className={`w-1.5 h-1.5 rounded-full ${active ? "bg-brand" : "bg-transparent"}`} />
+                  active && <span className="w-2.5 h-2.5 rounded-full bg-brand" />
                 )}
-              </div>
-              <span className={`mt-1 text-[11px] font-bold ${active ? "text-[#333]" : "text-gray-400"}`}>
-                {t(step.label)}
-              </span>
-            </div>
+              </li>
+            </Fragment>
           );
         })}
-      </div>
-    </div>
+      </ol>
+    </nav>
   );
 }
