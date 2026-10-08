@@ -176,6 +176,8 @@ export interface RawLineItemGroup {
   quantity: number;
   state?: string;
   endpoint_id?: string;
+  /** Date of the last state change (seconds). */
+  last_update?: number;
   item?: { features?: Record<string, unknown> };
 }
 
@@ -275,6 +277,8 @@ export async function fetchOrder(
     settings.featureSize,
     ...splitList(settings.featureImage),
     settings.featureSubstitution,
+    settings.featureReturnEligible,
+    settings.featureReturnDelay,
   ].filter(Boolean);
   // Same fields as the GET /orders reference payload ({name} expanded to the configured features).
   const fields = [
@@ -313,6 +317,12 @@ export interface Article {
   eligible: boolean;
   /** Substitution item ids listed in the item feature set in Settings. */
   substitutionIds: string[];
+  /** Return allowed by the item sheet (return eligibility + withdrawal period). */
+  returnable: boolean;
+  /** Why a return is refused: item not eligible, or withdrawal period over. */
+  returnBlock?: "notEligible" | "expired";
+  /** End of the withdrawal period, when the item has one. */
+  returnDeadline?: Date;
 }
 
 function feature(features: Record<string, unknown> | undefined, name: string): string | undefined {
@@ -355,7 +365,41 @@ export function parseIdList(value: unknown): string[] {
   ];
 }
 
-export function toArticles(order: RawOrder, settings: Settings): Article[] {
+const TRUE_VALUES = new Set(["true", "1", "yes", "y", "oui", "o", "vrai"]);
+const FALSE_VALUES = new Set(["false", "0", "no", "n", "non", "faux"]);
+
+/** "oui" / "true" / 1 → true, "non" / "false" / 0 → false, anything else → undefined. */
+export function parseBoolean(value: unknown): boolean | undefined {
+  const text = (Array.isArray(value) ? value[0] : value)?.toString().trim().toLowerCase();
+  if (text === undefined) return undefined;
+  if (TRUE_VALUES.has(text)) return true;
+  if (FALSE_VALUES.has(text)) return false;
+  return undefined;
+}
+
+/**
+ * Return rules from the item sheet: the item must be return-eligible and the
+ * withdrawal period (days) must not be over. It starts at the last state change
+ * of the line (fulfilment / delivery), or at the order date. Missing features
+ * do not block the return.
+ */
+function returnRules(
+  features: Record<string, unknown>,
+  settings: Settings,
+  since: number | undefined,
+  now: Date,
+): Pick<Article, "returnable" | "returnBlock" | "returnDeadline"> {
+  if (parseBoolean(features[settings.featureReturnEligible]) === false)
+    return { returnable: false, returnBlock: "notEligible" };
+  const days = Number.parseFloat(feature(features, settings.featureReturnDelay) ?? "");
+  if (!Number.isFinite(days) || !since) return { returnable: true };
+  const returnDeadline = new Date((since + days * 86400) * 1000);
+  return now <= returnDeadline
+    ? { returnable: true, returnDeadline }
+    : { returnable: false, returnBlock: "expired", returnDeadline };
+}
+
+export function toArticles(order: RawOrder, settings: Settings, now = new Date()): Article[] {
   const eligibleStates = new Set(splitList(settings.eligibleStates).map((s) => s.toLowerCase()));
   const orderItems = order.order_items ?? [];
   const byId = new Map(orderItems.map((oi) => [oi.id ?? oi._id ?? "", oi]));
@@ -387,6 +431,7 @@ export function toArticles(order: RawOrder, settings: Settings): Article[] {
       substitutionIds: settings.featureSubstitution
         ? parseIdList(features[settings.featureSubstitution]).filter((id) => id !== itemId)
         : [],
+      ...returnRules(features, settings, lig?.last_update ?? order.date, now),
     };
   };
 

@@ -109,10 +109,10 @@ export function ExchangeWorkflow({
 
   const toggle = (id: string) => {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+    // Items that cannot be returned (item sheet rules) can only be exchanged.
+    const action = articles.find((a) => a.id === id)?.returnable === false ? "exchange" : "return";
     setConfigs((prev) =>
-      prev[id]
-        ? prev
-        : { ...prev, [id]: { action: "return", reason: reasons.return[0] ?? "", exchangeType: "same_model" } },
+      prev[id] ? prev : { ...prev, [id]: { action, reason: reasons[action][0] ?? "", exchangeType: "same_model" } },
     );
   };
   const update = useCallback(
@@ -220,18 +220,23 @@ export function ExchangeWorkflow({
                 {(["return", "exchange"] as const).map((action) => (
                   <button
                     key={action}
+                    disabled={action === "return" && !a.returnable}
+                    title={action === "return" && !a.returnable ? t("config.returnBlocked") : undefined}
                     // Each action has its own reasons: reset to the first one when switching.
                     onClick={() => action !== c.action && update(a.id, { action, reason: reasons[action][0] ?? "" })}
                     className={`flex-1 py-2 px-3 rounded-lg border text-[13px] font-bold transition-all ${
-                      c.action === action
-                        ? "border-brand bg-brand/5 text-brand"
-                        : "border-gray-200 text-gray-500 hover:border-gray-300"
+                      action === "return" && !a.returnable
+                        ? "border-gray-100 text-gray-300 cursor-not-allowed"
+                        : c.action === action
+                          ? "border-brand bg-brand/5 text-brand"
+                          : "border-gray-200 text-gray-500 hover:border-gray-300"
                     }`}
                   >
                     {t(action === "return" ? "config.return" : "config.exchange")}
                   </button>
                 ))}
               </div>
+              {!a.returnable && <InfoBanner tone="warning" text={t("config.returnBlocked")} />}
               <div className="space-y-1">
                 <FieldLabel>{t(c.action === "return" ? "config.returnReason" : "config.exchangeReason")}</FieldLabel>
                 <select

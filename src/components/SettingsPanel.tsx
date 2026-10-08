@@ -241,6 +241,10 @@ export function SettingsPanel({
         {text("stockEndpointIds", "settings.stockEndpointIds", t("settings.stockEndpointIdsHint"))}
         {text("featureSubstitution", "settings.featureSubstitution", t("settings.featureSubstitutionHint"))}
         <div className="grid grid-cols-2 gap-2.5">
+          {text("featureReturnEligible", "settings.featureReturnEligible", t("settings.featureReturnEligibleHint"))}
+          {text("featureReturnDelay", "settings.featureReturnDelay", t("settings.featureReturnDelayHint"))}
+        </div>
+        <div className="grid grid-cols-2 gap-2.5">
           {text("featurePrice", "settings.featurePrice")}
           {text("sheetFeatures", "settings.sheetFeatures", t("settings.sheetFeaturesHint"))}
         </div>

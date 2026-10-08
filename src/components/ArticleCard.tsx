@@ -1,4 +1,4 @@
-import { useI18n } from "../lib/i18n";
+import { useI18n, type I18n } from "../lib/i18n";
 import type { Article } from "../lib/onestock";
 import { CheckIcon, ItemImage } from "./ui";
 
@@ -11,7 +11,7 @@ export function ArticleCard({
   isSelected: boolean;
   onToggle?: (id: string) => void;
 }) {
-  const { t, formatPrice, stateLabel } = useI18n();
+  const { t, formatPrice, formatDate, stateLabel } = useI18n();
   const disabled = !article.eligible;
   const details = [formatPrice(article.price, article.currency), article.color, article.size]
     .filter(Boolean)
@@ -34,6 +34,7 @@ export function ArticleCard({
         <h3 className="text-[14px] font-bold text-gray-800 leading-tight mb-0.5 truncate">{article.name}</h3>
         <p className="text-[13px] text-gray-600 font-medium">{details}</p>
         <p className="text-[11px] text-gray-400 tracking-tight font-medium">{article.sku}</p>
+        {!disabled && <ReturnInfo article={article} t={t} formatDate={formatDate} />}
       </div>
       <div className="flex items-center gap-3 pr-1">
         <span
@@ -57,5 +58,23 @@ export function ArticleCard({
         )}
       </div>
     </div>
+  );
+}
+
+/** Return rules of the item sheet: deadline, or why only an exchange is possible. */
+function ReturnInfo({ article, t, formatDate }: { article: Article } & Pick<I18n, "t" | "formatDate">) {
+  if (article.returnable) {
+    return article.returnDeadline ? (
+      <p className="text-[11px] text-green-700 font-medium">
+        {t("article.returnUntil", { date: formatDate(article.returnDeadline) })}
+      </p>
+    ) : null;
+  }
+  return (
+    <p className="text-[11px] text-orange-700 font-medium">
+      {article.returnBlock === "expired" && article.returnDeadline
+        ? t("article.returnExpired", { date: formatDate(article.returnDeadline) })
+        : t("article.notReturnable")}
+    </p>
   );
 }

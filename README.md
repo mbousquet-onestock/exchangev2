@@ -22,13 +22,19 @@ from the OneStock API and shows the articles eligible for an exchange.
    for price and features). Rows whose state is in *Eligible line states*
    (default `fulfilled`) can be selected for return / exchange; the others are
    listed as not eligible.
+   **Return rules** (item sheet): a return needs `eligible_retour` to be true
+   (oui / true / 1) and the withdrawal period `delai_retractation` (days) not to
+   be over; it starts at the last state change of the line (fulfilment /
+   delivery), or at the order date. A missing feature does not block the
+   return. Items that cannot be returned can still be exchanged (reshipped).
 4. **Language** (`src/lib/i18n.tsx`) — the interface follows the `lang` (and
    `locale`, for prices) sent in the context: English, French, Spanish, German
    and Italian, English as fallback. It can be forced in Settings. Item features
    are requested in the same language unless set otherwise.
 5. **Reasons** — return and exchange have their own reason lists (switching the
    action resets the reason). Empty lists in Settings use translated defaults
-   (return: *Rétractation, Ne convient pas*; exchange: *Casse, Non livré*).
+   (return: *Rétractation, Ne convient pas*; exchange: *Casse, Perte
+   transporteur* — reshipment only for breakage or carrier loss).
 6. **Stock & substitutes** (`src/lib/catalog.ts`) — when an item is set to
    *exchange*: *Replacement* shows the sheet and stock of the ordered item;
    *Substitution* lists the substitution items whose ids are in the ordered

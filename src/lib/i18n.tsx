@@ -4,6 +4,16 @@ export const LANGUAGES = ["en", "fr", "es", "de", "it"] as const;
 export type Language = (typeof LANGUAGES)[number];
 
 const en = {
+  "article.returnUntil": "Return possible until {date}",
+  "article.notReturnable": "Not returnable — exchange only for breakage or carrier loss",
+  "article.returnExpired": "Withdrawal period over since {date} — exchange only for breakage or carrier loss",
+  "config.returnBlocked": "Return not allowed for this item: exchange (reshipment) only, for breakage or carrier loss.",
+  "settings.featureReturnEligible": "Return eligibility feature",
+  "settings.featureReturnEligibleHint": "Item feature: oui / non (true / false). Missing = returnable.",
+  "settings.featureReturnDelay": "Withdrawal period feature",
+  "settings.featureReturnDelayHint":
+    "Item feature in days, from the last state change of the line (else the order date). Missing = no limit.",
+  "reasons.exchange": "Breakage, Lost by carrier",
   "settings.closeOnConfirm": "Close the window after confirmation",
   "settings.closeOnConfirmHint":
     "Sends the message below to OneStock and closes the window when it was opened as a popup / new tab.",
@@ -37,7 +47,6 @@ const en = {
   "settings.sheetFeatures": "Sheet features",
   "settings.sheetFeaturesHint": "Extra features shown on the substitute sheets, comma separated.",
   "reasons.return": "Withdrawal, Doesn't suit me",
-  "reasons.exchange": "Broken, Not delivered",
   "config.substitutes": "Possible substitutes ({count})",
   "stock.loading": "Checking stock…",
   "stock.available": "{count} available in stock",
@@ -187,6 +196,18 @@ export type MessageKey = keyof typeof en;
 type Dictionary = Record<MessageKey, string>;
 
 const fr: Dictionary = {
+  "article.returnUntil": "Retour possible jusqu'au {date}",
+  "article.notReturnable": "Non retournable — échange uniquement en cas de casse ou perte transporteur",
+  "article.returnExpired":
+    "Délai de rétractation dépassé depuis le {date} — échange uniquement en cas de casse ou perte transporteur",
+  "config.returnBlocked":
+    "Retour non autorisé pour cet article : échange (réexpédition) uniquement, en cas de casse ou perte transporteur.",
+  "settings.featureReturnEligible": "Caract. éligibilité au retour",
+  "settings.featureReturnEligibleHint": "Caractéristique article : oui / non (true / false). Absente = retournable.",
+  "settings.featureReturnDelay": "Caract. délai de rétractation",
+  "settings.featureReturnDelayHint":
+    "Caractéristique article en jours, à partir du dernier changement d'état de la ligne (sinon la date de commande). Absente = sans limite.",
+  "reasons.exchange": "Casse, Perte transporteur",
   "settings.closeOnConfirm": "Fermer la fenêtre après confirmation",
   "settings.closeOnConfirmHint":
     "Envoie le message ci-dessous à OneStock et ferme la fenêtre si elle a été ouverte en popup / nouvel onglet.",
@@ -222,7 +243,6 @@ const fr: Dictionary = {
   "settings.sheetFeaturesHint":
     "Caractéristiques supplémentaires affichées sur les fiches de substitution, séparées par des virgules.",
   "reasons.return": "Rétractation, Ne convient pas",
-  "reasons.exchange": "Casse, Non livré",
   "config.substitutes": "Articles de substitution ({count})",
   "stock.loading": "Vérification du stock…",
   "stock.available": "{count} disponible(s) en stock",
@@ -372,6 +392,13 @@ const fr: Dictionary = {
 
 // Other languages translate the customer-facing workflow; anything missing falls back to English.
 const es: Partial<Dictionary> = {
+  "article.returnUntil": "Devolución posible hasta el {date}",
+  "article.notReturnable": "No retornable — cambio solo por rotura o pérdida del transportista",
+  "article.returnExpired":
+    "Plazo de desistimiento vencido desde el {date} — cambio solo por rotura o pérdida del transportista",
+  "config.returnBlocked":
+    "Devolución no permitida para este artículo: solo cambio (reenvío) por rotura o pérdida del transportista.",
+  "reasons.exchange": "Rotura, Pérdida del transportista",
   "selection.bannerWithParent":
     "Pedido {order} (pedido padre {parent}) — seleccione los artículos a devolver o cambiar",
   "footer.submitting": "Enviando…",
@@ -385,7 +412,6 @@ const es: Partial<Dictionary> = {
   "config.sheetDetails": "Ficha del artículo",
   "catalog.loading": "Cargando fichas…",
   "reasons.return": "Desistimiento, No me queda bien",
-  "reasons.exchange": "Roto, No entregado",
   "config.substitutes": "Artículos de sustitución ({count})",
   "stock.loading": "Comprobando stock…",
   "stock.available": "{count} disponible(s) en stock",
@@ -436,6 +462,13 @@ const es: Partial<Dictionary> = {
 };
 
 const de: Partial<Dictionary> = {
+  "article.returnUntil": "Rückgabe möglich bis {date}",
+  "article.notReturnable": "Nicht rückgabefähig — Umtausch nur bei Bruch oder Verlust durch den Versanddienst",
+  "article.returnExpired":
+    "Widerrufsfrist seit {date} abgelaufen — Umtausch nur bei Bruch oder Verlust durch den Versanddienst",
+  "config.returnBlocked":
+    "Rückgabe für diesen Artikel nicht erlaubt: nur Umtausch (Neuversand) bei Bruch oder Verlust durch den Versanddienst.",
+  "reasons.exchange": "Bruch, Verlust durch Versanddienst",
   "selection.bannerWithParent":
     "Bestellung {order} (Hauptbestellung {parent}) — Artikel für Rücksendung oder Umtausch auswählen",
   "footer.submitting": "Wird gesendet…",
@@ -449,7 +482,6 @@ const de: Partial<Dictionary> = {
   "config.sheetDetails": "Artikeldetails",
   "catalog.loading": "Artikeldaten werden geladen…",
   "reasons.return": "Widerruf, Passt nicht",
-  "reasons.exchange": "Beschädigt, Nicht geliefert",
   "config.substitutes": "Ersatzartikel ({count})",
   "stock.loading": "Bestand wird geprüft…",
   "stock.available": "{count} auf Lager verfügbar",
@@ -500,6 +532,12 @@ const de: Partial<Dictionary> = {
 };
 
 const it: Partial<Dictionary> = {
+  "article.returnUntil": "Reso possibile fino al {date}",
+  "article.notReturnable": "Non restituibile — cambio solo per rottura o smarrimento del corriere",
+  "article.returnExpired": "Termine di recesso scaduto dal {date} — cambio solo per rottura o smarrimento del corriere",
+  "config.returnBlocked":
+    "Reso non consentito per questo articolo: solo cambio (rispedizione) per rottura o smarrimento del corriere.",
+  "reasons.exchange": "Rottura, Smarrimento del corriere",
   "selection.bannerWithParent":
     "Ordine {order} (ordine padre {parent}) — seleziona gli articoli da restituire o cambiare",
   "footer.submitting": "Invio…",
@@ -513,7 +551,6 @@ const it: Partial<Dictionary> = {
   "config.sheetDetails": "Scheda articolo",
   "catalog.loading": "Caricamento delle schede…",
   "reasons.return": "Recesso, Non va bene",
-  "reasons.exchange": "Rotto, Non consegnato",
   "config.substitutes": "Articoli sostitutivi ({count})",
   "stock.loading": "Verifica dello stock…",
   "stock.available": "{count} disponibile/i in stock",
@@ -585,6 +622,7 @@ export interface I18n {
   /** Like t(), but placeholders can be React nodes (e.g. <strong>). */
   rich: (key: MessageKey, vars: Record<string, ReactNode>) => ReactNode;
   formatPrice: (amount: number, currency: string) => string;
+  formatDate: (date: Date) => string;
   stateLabel: (state: string) => string;
 }
 
@@ -603,6 +641,13 @@ export function createI18n(language: Language, locale?: string): I18n {
           const name = part.match(/^\{(\w+)\}$/)?.[1];
           return <Fragment key={i}>{name && name in vars ? vars[name] : part}</Fragment>;
         }),
+    formatDate: (date) => {
+      try {
+        return new Intl.DateTimeFormat(bcp47, { dateStyle: "short" }).format(date);
+      } catch {
+        return date.toISOString().slice(0, 10);
+      }
+    },
     formatPrice: (amount, currency) => {
       try {
         return new Intl.NumberFormat(bcp47, { style: "currency", currency }).format(amount);

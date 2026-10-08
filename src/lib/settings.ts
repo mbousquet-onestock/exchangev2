@@ -35,6 +35,10 @@ export interface Settings {
   featureImage: string;
   /** Item feature holding the price, used for substitutes (GET /items). */
   featurePrice: string;
+  /** Item feature telling whether the item can be returned (oui / non, true / false). */
+  featureReturnEligible: string;
+  /** Item feature holding the withdrawal period, in days. */
+  featureReturnDelay: string;
   /** Order item feature listing the substitution item ids. */
   featureSubstitution: string;
   /** Extra features shown on the substitute sheets (comma separated). */
@@ -86,6 +90,8 @@ export const DEFAULT_SETTINGS: Settings = {
   featureSize: "size",
   featureImage: "image_url, image",
   featurePrice: "price",
+  featureReturnEligible: "eligible_retour",
+  featureReturnDelay: "delai_retractation",
   featureSubstitution: "substitution",
   sheetFeatures: "description",
   stockRequestName: "detailed",
