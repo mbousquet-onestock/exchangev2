@@ -18,7 +18,10 @@ function environmentOf(host: string): string {
 async function serverToken(target: URL, siteId: string, forceLogin: boolean): Promise<string | undefined> {
   if (!settingsConfigured() || !siteId) return undefined;
   // In prod without stored credentials, the qualif ones are used.
-  const { values, environment } = await readCredentials(siteId, environmentOf(target.hostname));
+  // Cached credentials, re-read after a 401 (token changed in the Settings API).
+  const { values, environment } = await readCredentials(siteId, environmentOf(target.hostname), {
+    fresh: forceLogin,
+  });
   if (values.onestock_token && !forceLogin) return values.onestock_token;
 
   const userId = values.onestock_user_id;

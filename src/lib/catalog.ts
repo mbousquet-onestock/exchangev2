@@ -48,6 +48,9 @@ function toCatalogItem(raw: RawItem, settings: Settings, lang: string): CatalogI
   };
 }
 
+/** Whether GET /items accepts item_ids, per API base URL (known after the first attempt). */
+const itemIdsSupport = new Map<string, Promise<boolean>>();
+
 /**
  * Item sheets for the given ids. GET /items has no public filter on ids, so we
  * try `item_ids` first, then a pattern search on each id.
@@ -75,12 +78,26 @@ export async function fetchItemSheets(
       (r?.items ?? []).map((raw) => toCatalogItem(raw, settings, lang)),
     );
 
+  // item_ids is internal and may be refused (HTTP 500): once it failed for this API, go straight to
+  // the pattern search. Concurrent calls wait for the first attempt instead of all trying it.
   let firstError: unknown;
-  try {
-    const items = await query({ item_ids: ids, pagination: { limit: ids.length, start: 0 } });
-    if (items.length) return items;
-  } catch (error) {
-    firstError = error;
+  const support = itemIdsSupport.get(conn.baseUrl);
+  if (!support || (await support)) {
+    const attempt = query({ item_ids: ids, pagination: { limit: ids.length, start: 0 } });
+    if (!support)
+      itemIdsSupport.set(
+        conn.baseUrl,
+        attempt.then(
+          () => true,
+          () => false,
+        ),
+      );
+    try {
+      const items = await attempt;
+      if (items.length) return items;
+    } catch (error) {
+      firstError = error;
+    }
   }
   const results = await Promise.allSettled(
     ids.map((id) =>

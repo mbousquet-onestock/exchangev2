@@ -126,14 +126,28 @@ export async function readMerged(
 const hasCredentials = (values: Record<string, string>) =>
   !!values.onestock_token || (!!values.onestock_user_id && !!values.onestock_password);
 
+type Credentials = { values: Record<string, string>; environment: string };
+
+/** Credentials kept in memory between calls (per function instance), to spare a Settings API round trip. */
+const credentialsCache = new Map<string, { credentials: Promise<Credentials>; expires: number }>();
+const CREDENTIALS_TTL_MS = 5 * 60 * 1000;
+
 /**
- * OneStock credentials (decrypted) for a site and an environment. In prod, when
- * none are stored, the qualif ones are used.
+ * OneStock credentials (decrypted) for a site and an environment, cached 5 minutes
+ * (`fresh` bypasses the cache, e.g. after a 401). In prod, when none are stored,
+ * the qualif ones are used.
  */
-export async function readCredentials(
-  siteId: string,
-  environment: string,
-): Promise<{ values: Record<string, string>; environment: string }> {
+export function readCredentials(siteId: string, environment: string, { fresh = false } = {}): Promise<Credentials> {
+  const key = `${environment}|${siteId}`;
+  const cached = credentialsCache.get(key);
+  if (cached && cached.expires > Date.now() && !fresh) return cached.credentials;
+  const credentials = loadCredentials(siteId, environment);
+  credentialsCache.set(key, { credentials, expires: Date.now() + CREDENTIALS_TTL_MS });
+  credentials.catch(() => credentialsCache.delete(key));
+  return credentials;
+}
+
+async function loadCredentials(siteId: string, environment: string): Promise<Credentials> {
   const { values } = await readMerged(siteId, environment, { withSecrets: true });
   if (environment !== "prod" || hasCredentials(values)) return { values, environment };
   const qualif = (await readMerged(siteId, "qualif", { withSecrets: true })).values;
@@ -142,6 +156,7 @@ export async function readCredentials(
 
 /** Creates or replaces settings of this extension (site_id "" = all sites). Secrets are encrypted by the API. */
 export async function writeSettings(siteId: string, environment: string, values: Record<string, string>) {
+  credentialsCache.clear();
   for (const [key, value] of Object.entries(values)) {
     const params = new URLSearchParams({ key, site_id: siteId, extension_id: extensionId(), environment, upsert: "1" });
     await request(`/item?${params}`, { method: "PUT", body: JSON.stringify({ value }) });

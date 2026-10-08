@@ -9,6 +9,9 @@ import { ExchangeOptions, type ExchangeChoice } from "./ExchangeOptions";
 import { Step, StepIndicator } from "./StepIndicator";
 import { FieldLabel, InfoBanner, ItemImage, inputClass, selectClass } from "./ui";
 
+/** Eligible items whose stock and sheets are preloaded. */
+const PRELOAD_MAX = 10;
+
 interface ItemConfig extends ExchangeChoice {
   action: "return" | "exchange";
   reason: string;
@@ -101,8 +104,12 @@ export function ExchangeWorkflow({
   const notEligible = articles.filter((a) => !a.eligible);
   const selected = articles.filter((a) => selectedIds.includes(a.id));
 
-  // Load stock + substitute sheets as soon as an item is set to "exchange".
+  // Stock + sheets are preloaded for the eligible items as soon as the order is shown (the Options
+  // step is then ready), and loaded on demand for any other item set to "exchange".
   const { ensure } = catalog;
+  useEffect(() => {
+    for (const a of articles.filter((x) => x.eligible).slice(0, PRELOAD_MAX)) ensure(a);
+  }, [articles, ensure]);
   useEffect(() => {
     for (const a of selected) if (configs[a.id]?.action === "exchange") ensure(a);
   }, [selected, configs, ensure]);

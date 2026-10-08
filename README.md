@@ -115,6 +115,18 @@ Server environment variables (Vercel → Settings → Environment Variables, or
 `SETTINGS_API_KEY`, `SETTINGS_ENCRYPTION_KEY` (optional), `SETTINGS_EXTENSION_ID`
 (default `exchange`).
 
+## Performance
+
+- The proxy keeps the OneStock credentials read from the Settings API in
+  memory for 5 minutes (re-read at once after a 401).
+- The browser keeps the last Settings API values: the order is loaded at once
+  with them while the Settings API is read again in the background (the order
+  is reloaded only if something changed).
+- Stock and item sheets of the eligible items (10 max) are preloaded as soon
+  as the order is shown, so the Options step is ready.
+- `GET /items` with `item_ids` is tried once; if it fails, the per-id pattern
+  search is used directly afterwards.
+
 ## CORS proxy
 
 Browsers may not be allowed to call `https://{site_id}.api(.qualif).onestock-retail.com`

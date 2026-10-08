@@ -191,6 +191,29 @@ async function putSettings(body: {
   }
 }
 
+type RemoteSettings = { values: Record<string, string>; secrets: string[] };
+
+const REMOTE_CACHE_KEY = "onestock-exchange-remote-settings";
+
+function readRemoteCache(key: string): RemoteSettings | undefined {
+  try {
+    return JSON.parse(localStorage.getItem(REMOTE_CACHE_KEY) ?? "{}")[key];
+  } catch {
+    return undefined;
+  }
+}
+
+function writeRemoteCache(key: string, value: RemoteSettings) {
+  try {
+    const all = JSON.parse(localStorage.getItem(REMOTE_CACHE_KEY) ?? "{}");
+    localStorage.setItem(REMOTE_CACHE_KEY, JSON.stringify({ ...all, [key]: value }));
+  } catch {
+    // storage unavailable: no cache
+  }
+}
+
+const sameRemote = (a: RemoteSettings | null, b: RemoteSettings) => !!a && JSON.stringify(a) === JSON.stringify(b);
+
 /** First-launch initialisations in progress / done, per environment (shared by all renders). */
 const seedings = new Map<string, Promise<void>>();
 
@@ -240,7 +263,7 @@ function persistLocal(settings: Settings) {
  */
 export function useSettings(contextSiteId?: string) {
   const [local, setLocal] = useState<Settings>(load);
-  const [remote, setRemote] = useState<{ values: Record<string, string>; secrets: string[] } | null>(null);
+  const [remote, setRemote] = useState<RemoteSettings | null>(null);
   const [storage, setStorage] = useState<SettingsStorage>({
     mode: "loading",
     siteId: "",
@@ -254,6 +277,13 @@ export function useSettings(contextSiteId?: string) {
 
   useEffect(() => {
     let cancelled = false;
+    // Last known Settings API values: used at once, then refreshed in the background.
+    const cacheKey = `${environment}|${siteId}`;
+    const cached = readRemoteCache(cacheKey);
+    if (cached) {
+      setRemote((prev) => (sameRemote(prev, cached) ? prev : cached));
+      setStorage({ mode: "remote", siteId, environment, secrets: cached.secrets });
+    }
     const load = async () => {
       let body = await getSettings(siteId, environment);
       // First launch for an environment: the Settings API has none of this app's settings yet.
@@ -287,8 +317,10 @@ export function useSettings(contextSiteId?: string) {
     };
     load().then(
       ({ body, initialized }) => {
+        writeRemoteCache(cacheKey, body);
         if (cancelled) return;
-        setRemote(body);
+        // Same values as the cached ones: keep the same object, so nothing is reloaded.
+        setRemote((prev) => (sameRemote(prev, body) ? prev : body));
         setStorage({ mode: "remote", siteId, environment, secrets: body.secrets, initialized });
       },
       (error: Error) => {
