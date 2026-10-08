@@ -23,7 +23,7 @@ const en = {
   "settings.featureReturnEligibleHint": "Item feature: oui / non (true / false). Missing = returnable.",
   "settings.featureReturnDelay": "Withdrawal period feature",
   "settings.featureReturnDelayHint":
-    "Item feature in days, from the last update of the line's parcel (parcels.last_update; else last state change of the line, else order date). Missing = no limit.",
+    "Item feature, a duration (\"1 mois\", \"14 jours\", \"2 semaines\", \"30\" = days), from the last update of the line's parcel (parcels.last_update; else last state change of the line, else order date). Missing = no limit.",
   "reasons.exchange": "Breakage, Lost by carrier",
   "settings.closeOnConfirm": "Close the window after confirmation",
   "settings.closeOnConfirmHint":
@@ -227,7 +227,7 @@ const fr: Dictionary = {
   "settings.featureReturnEligibleHint": "Caractéristique article : oui / non (true / false). Absente = retournable.",
   "settings.featureReturnDelay": "Caract. délai de rétractation",
   "settings.featureReturnDelayHint":
-    "Caractéristique article en jours, à partir de la dernière mise à jour du colis de la ligne (parcels.last_update ; sinon dernier changement d'état de la ligne, sinon date de commande). Absente = sans limite.",
+    "Caractéristique article, une durée (« 1 mois », « 14 jours », « 2 semaines », « 30 » = jours), à partir de la dernière mise à jour du colis de la ligne (parcels.last_update ; sinon dernier changement d'état de la ligne, sinon date de commande). Absente = sans limite.",
   "reasons.exchange": "Casse, Perte transporteur",
   "settings.closeOnConfirm": "Fermer la fenêtre après confirmation",
   "settings.closeOnConfirmHint":

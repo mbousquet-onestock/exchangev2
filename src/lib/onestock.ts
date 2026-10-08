@@ -382,6 +382,41 @@ export function parseBoolean(value: unknown): boolean | undefined {
   return undefined;
 }
 
+export type DurationUnit = "day" | "week" | "month" | "year";
+
+const DURATION_UNITS: [RegExp, DurationUnit][] = [
+  [/^(j|jours?|d|days?)$/, "day"],
+  [/^(sem|semaines?|w|wk|weeks?)$/, "week"],
+  [/^(m|mois|months?)$/, "month"],
+  [/^(a|ans?|ann[ée]es?|y|yrs?|years?)$/, "year"],
+];
+
+/** "1 mois", "14 jours", "2 semaines", "1 an", "30" (days)… → amount + unit; undefined when unreadable. */
+export function parseDuration(value: string | undefined): { amount: number; unit: DurationUnit } | undefined {
+  const match = value
+    ?.trim()
+    .toLowerCase()
+    .match(/^(\d+(?:[.,]\d+)?)\s*([a-zàâçéèêëîïôûùüÿ]*)\.?$/);
+  if (!match) return undefined;
+  const amount = Number.parseFloat(match[1].replace(",", "."));
+  const unit = match[2] ? DURATION_UNITS.find(([pattern]) => pattern.test(match[2]))?.[1] : "day";
+  return unit && Number.isFinite(amount) ? { amount, unit } : undefined;
+}
+
+/** Adds a duration; months and years are calendar ones (06/10 + 1 month = 06/11), a fraction of month = 30 days. */
+export function addDuration(date: Date, { amount, unit }: { amount: number; unit: DurationUnit }): Date {
+  const result = new Date(date);
+  const days = (n: number) => result.setTime(result.getTime() + n * 86400000);
+  if (unit === "day") days(amount);
+  else if (unit === "week") days(amount * 7);
+  else {
+    const months = amount * (unit === "year" ? 12 : 1);
+    result.setMonth(result.getMonth() + Math.trunc(months));
+    days((months - Math.trunc(months)) * 30);
+  }
+  return result;
+}
+
 /**
  * Return rules from the item sheet: the item must be return-eligible and the
  * withdrawal period (days) must not be over. It starts at the last state change
@@ -397,9 +432,9 @@ function returnRules(
 ): Pick<Article, "returnable" | "returnBlock" | "returnDeadline"> {
   if (parseBoolean(features[settings.featureReturnEligible]) === false)
     return { returnable: false, returnBlock: "notEligible" };
-  const days = Number.parseFloat(feature(features, settings.featureReturnDelay) ?? "");
-  if (!Number.isFinite(days) || !since) return { returnable: true };
-  const returnDeadline = new Date((since + days * 86400) * 1000);
+  const delay = parseDuration(feature(features, settings.featureReturnDelay));
+  if (!delay || !since) return { returnable: true };
+  const returnDeadline = addDuration(new Date(since * 1000), delay);
   return now <= returnDeadline
     ? { returnable: true, returnDeadline }
     : { returnable: false, returnBlock: "expired", returnDeadline };

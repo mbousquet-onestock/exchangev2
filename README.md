@@ -23,7 +23,8 @@ from the OneStock API and shows the articles eligible for an exchange.
    (default `fulfilled`) can be selected for return / exchange; the others are
    listed as not eligible.
    **Return rules** (item sheet): a return needs `eligible_retour` to be true
-   (oui / true / 1) and the withdrawal period `delai_retractation` (days) not to
+   (oui / true / 1) and the withdrawal period `delai_retractation` (a duration:
+   `1 mois`, `14 jours`, `2 semaines`, `1 an`; a bare number = days) not to
    be over; it starts at the last update of the line's parcel
    (`parcels.last_update` via `line_item_groups.parcel_id`; else the parcel
    creation date), else the last state change of the line, else the order date. A missing feature does not block the
