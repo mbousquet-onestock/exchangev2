@@ -27,7 +27,6 @@ const en = {
   "settings.refreshUrlHint": "Empty = parent_url sent by OneStock. {site_id} and {order_id} are replaced.",
   "settings.subOrderIdFormat": "Exchange sub-order id",
   "settings.subOrderIdFormatHint": "{order_id} = initial order, {n} = 1, 2… (first id that does not exist yet).",
-  "selection.bannerWithParent": "Order {order} (parent order {parent}) — select items to return or exchange",
   "footer.submitting": "Sending…",
   "submit.error": "The request could not be saved: {detail}",
   "submit.success": "Request saved: {count} line(s) moved to return.",
@@ -74,7 +73,7 @@ const en = {
   "steps.method": "Method",
   "steps.validation": "Validation",
 
-  "selection.banner": "Order {order} — select items to return or exchange",
+  "selection.banner": "Select items to return or exchange",
   "selection.noneEligible": "No item of this order is eligible (eligible states: {states}).",
   "selection.notEligible": "{count} item(s) not eligible for return or exchange",
   "article.qty": "Qty {qty}",
@@ -221,8 +220,6 @@ const fr: Dictionary = {
   "settings.refreshUrlHint": "Vide = parent_url envoyée par OneStock. {site_id} et {order_id} sont remplacés.",
   "settings.subOrderIdFormat": "Id de la sous-commande d'échange",
   "settings.subOrderIdFormatHint": "{order_id} = commande initiale, {n} = 1, 2… (premier id qui n'existe pas encore).",
-  "selection.bannerWithParent":
-    "Commande {order} (commande parente {parent}) — sélectionnez les articles à retourner ou échanger",
   "footer.submitting": "Envoi…",
   "submit.error": "La demande n'a pas pu être enregistrée : {detail}",
   "submit.success": "Demande enregistrée : {count} ligne(s) passée(s) en retour.",
@@ -271,7 +268,7 @@ const fr: Dictionary = {
   "steps.method": "Mode",
   "steps.validation": "Validation",
 
-  "selection.banner": "Commande {order} — sélectionnez les articles à retourner ou échanger",
+  "selection.banner": "Sélectionnez les articles à retourner ou échanger",
   "selection.noneEligible": "Aucun article de cette commande n'est éligible (états éligibles : {states}).",
   "selection.notEligible": "{count} article(s) non éligible(s) au retour ou à l'échange",
   "article.qty": "Qté {qty}",
@@ -399,8 +396,6 @@ const es: Partial<Dictionary> = {
   "config.returnBlocked":
     "Devolución no permitida para este artículo: solo cambio (reenvío) por rotura o pérdida del transportista.",
   "reasons.exchange": "Rotura, Pérdida del transportista",
-  "selection.bannerWithParent":
-    "Pedido {order} (pedido padre {parent}) — seleccione los artículos a devolver o cambiar",
   "footer.submitting": "Enviando…",
   "submit.error": "No se pudo registrar la solicitud: {detail}",
   "submit.success": "Solicitud registrada: {count} línea(s) en devolución.",
@@ -424,7 +419,7 @@ const es: Partial<Dictionary> = {
   "steps.options": "Opciones",
   "steps.method": "Método",
   "steps.validation": "Validación",
-  "selection.banner": "Pedido {order} — seleccione los artículos a devolver o cambiar",
+  "selection.banner": "Seleccione los artículos a devolver o cambiar",
   "selection.noneEligible": "Ningún artículo de este pedido es elegible (estados elegibles: {states}).",
   "selection.notEligible": "{count} artículo(s) no elegible(s) para devolución o cambio",
   "article.qty": "Cant. {qty}",
@@ -469,8 +464,6 @@ const de: Partial<Dictionary> = {
   "config.returnBlocked":
     "Rückgabe für diesen Artikel nicht erlaubt: nur Umtausch (Neuversand) bei Bruch oder Verlust durch den Versanddienst.",
   "reasons.exchange": "Bruch, Verlust durch Versanddienst",
-  "selection.bannerWithParent":
-    "Bestellung {order} (Hauptbestellung {parent}) — Artikel für Rücksendung oder Umtausch auswählen",
   "footer.submitting": "Wird gesendet…",
   "submit.error": "Die Anfrage konnte nicht gespeichert werden: {detail}",
   "submit.success": "Anfrage gespeichert: {count} Position(en) in Rücksendung.",
@@ -494,7 +487,7 @@ const de: Partial<Dictionary> = {
   "steps.options": "Optionen",
   "steps.method": "Methode",
   "steps.validation": "Bestätigung",
-  "selection.banner": "Bestellung {order} — Artikel für Rücksendung oder Umtausch auswählen",
+  "selection.banner": "Artikel für Rücksendung oder Umtausch auswählen",
   "selection.noneEligible": "Kein Artikel dieser Bestellung ist berechtigt (berechtigte Status: {states}).",
   "selection.notEligible": "{count} Artikel nicht für Rücksendung oder Umtausch berechtigt",
   "article.qty": "Menge {qty}",
@@ -538,8 +531,6 @@ const it: Partial<Dictionary> = {
   "config.returnBlocked":
     "Reso non consentito per questo articolo: solo cambio (rispedizione) per rottura o smarrimento del corriere.",
   "reasons.exchange": "Rottura, Smarrimento del corriere",
-  "selection.bannerWithParent":
-    "Ordine {order} (ordine padre {parent}) — seleziona gli articoli da restituire o cambiare",
   "footer.submitting": "Invio…",
   "submit.error": "Impossibile registrare la richiesta: {detail}",
   "submit.success": "Richiesta registrata: {count} riga/e in reso.",
@@ -563,7 +554,7 @@ const it: Partial<Dictionary> = {
   "steps.options": "Opzioni",
   "steps.method": "Metodo",
   "steps.validation": "Conferma",
-  "selection.banner": "Ordine {order} — seleziona gli articoli da restituire o cambiare",
+  "selection.banner": "Seleziona gli articoli da restituire o cambiare",
   "selection.noneEligible": "Nessun articolo di questo ordine è idoneo (stati idonei: {states}).",
   "selection.notEligible": "{count} articolo/i non idoneo/i al reso o al cambio",
   "article.qty": "Qtà {qty}",

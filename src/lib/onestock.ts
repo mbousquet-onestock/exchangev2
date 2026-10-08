@@ -403,7 +403,7 @@ export function toArticles(order: RawOrder, settings: Settings, now = new Date()
   const eligibleStates = new Set(splitList(settings.eligibleStates).map((s) => s.toLowerCase()));
   const orderItems = order.order_items ?? [];
   const byId = new Map(orderItems.map((oi) => [oi.id ?? oi._id ?? "", oi]));
-  const orderCurrency = order.pricing_details?.currency ?? "EUR";
+  const orderCurrency = order.pricing_details?.currency || "EUR";
 
   const fromItem = (
     key: string,
@@ -424,7 +424,8 @@ export function toArticles(order: RawOrder, settings: Settings, now = new Date()
       size: feature(features, settings.featureSize),
       imageUrl: pickImage(features, settings.featureImage),
       price: unit,
-      currency: (oi?.pricing_details?.currency ?? orderCurrency).toUpperCase(),
+      // An empty item currency would break the price formatting: use the order's.
+      currency: (oi?.pricing_details?.currency || orderCurrency).toUpperCase(),
       quantity,
       state,
       eligible: eligibleStates.has(state.toLowerCase()),
