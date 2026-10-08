@@ -4,6 +4,7 @@ export const LANGUAGES = ["en", "fr", "es", "de", "it"] as const;
 export type Language = (typeof LANGUAGES)[number];
 
 const en = {
+  "article.notEligible": "Not eligible for return or exchange (status « {state} »)",
   "settings.initialized":
     "First launch: the settings were created in the Settings API for all sites (environment {env}), from this browser's settings or the defaults.",
   "settings.storedRemote":
@@ -23,7 +24,7 @@ const en = {
   "settings.featureReturnEligibleHint": "Item feature: oui / non (true / false). Missing = returnable.",
   "settings.featureReturnDelay": "Withdrawal period feature",
   "settings.featureReturnDelayHint":
-    "Item feature, a duration (\"1 mois\", \"14 jours\", \"2 semaines\", \"30\" = days), from the last update of the line's parcel (parcels.last_update; else last state change of the line, else order date). Missing = no limit.",
+    'Item feature, a duration ("1 mois", "14 jours", "2 semaines", "30" = days), from the last update of the line\'s parcel (parcels.last_update; else last state change of the line, else order date). Missing = no limit.',
   "reasons.exchange": "Breakage, Lost by carrier",
   "settings.closeOnConfirm": "Close the window after confirmation",
   "settings.closeOnConfirmHint":
@@ -86,7 +87,6 @@ const en = {
 
   "selection.banner": "Select items to return or exchange",
   "selection.noneEligible": "No item of this order is eligible (eligible states: {states}).",
-  "selection.notEligible": "{count} item(s) not eligible for return or exchange",
   "article.qty": "Qty {qty}",
 
   "config.banner": "Choose your return or exchange options",
@@ -205,6 +205,7 @@ export type MessageKey = keyof typeof en;
 type Dictionary = Record<MessageKey, string>;
 
 const fr: Dictionary = {
+  "article.notEligible": "Ni retour ni échange possible pour le statut « {state} »",
   "settings.initialized":
     "Premier lancement : les paramètres ont été créés dans l'API Settings pour tous les sites (environnement {env}), à partir des paramètres de ce navigateur ou des valeurs par défaut.",
   "settings.storedRemote":
@@ -292,7 +293,6 @@ const fr: Dictionary = {
 
   "selection.banner": "Sélectionnez les articles à retourner ou échanger",
   "selection.noneEligible": "Aucun article de cette commande n'est éligible (états éligibles : {states}).",
-  "selection.notEligible": "{count} article(s) non éligible(s) au retour ou à l'échange",
   "article.qty": "Qté {qty}",
 
   "config.banner": "Choisissez vos options de retour ou d'échange",
@@ -410,6 +410,7 @@ const fr: Dictionary = {
 
 // Other languages translate the customer-facing workflow; anything missing falls back to English.
 const es: Partial<Dictionary> = {
+  "article.notEligible": "Sin devolución ni cambio posible para el estado « {state} »",
   "article.returnUntil": "Devolución posible hasta el {date}",
   "article.notReturnable": "No retornable — cambio solo por rotura o pérdida del transportista",
   "article.returnExpired":
@@ -442,7 +443,6 @@ const es: Partial<Dictionary> = {
   "steps.validation": "Validación",
   "selection.banner": "Seleccione los artículos a devolver o cambiar",
   "selection.noneEligible": "Ningún artículo de este pedido es elegible (estados elegibles: {states}).",
-  "selection.notEligible": "{count} artículo(s) no elegible(s) para devolución o cambio",
   "article.qty": "Cant. {qty}",
   "config.banner": "Elija sus opciones de devolución o cambio",
   "config.return": "Devolución",
@@ -478,6 +478,7 @@ const es: Partial<Dictionary> = {
 };
 
 const de: Partial<Dictionary> = {
+  "article.notEligible": "Weder Rückgabe noch Umtausch möglich für den Status « {state} »",
   "article.returnUntil": "Rückgabe möglich bis {date}",
   "article.notReturnable": "Nicht rückgabefähig — Umtausch nur bei Bruch oder Verlust durch den Versanddienst",
   "article.returnExpired":
@@ -510,7 +511,6 @@ const de: Partial<Dictionary> = {
   "steps.validation": "Bestätigung",
   "selection.banner": "Artikel für Rücksendung oder Umtausch auswählen",
   "selection.noneEligible": "Kein Artikel dieser Bestellung ist berechtigt (berechtigte Status: {states}).",
-  "selection.notEligible": "{count} Artikel nicht für Rücksendung oder Umtausch berechtigt",
   "article.qty": "Menge {qty}",
   "config.banner": "Wählen Sie Ihre Rücksende- oder Umtauschoptionen",
   "config.return": "Rücksendung",
@@ -546,6 +546,7 @@ const de: Partial<Dictionary> = {
 };
 
 const it: Partial<Dictionary> = {
+  "article.notEligible": "Nessun reso o cambio possibile per lo stato « {state} »",
   "article.returnUntil": "Reso possibile fino al {date}",
   "article.notReturnable": "Non restituibile — cambio solo per rottura o smarrimento del corriere",
   "article.returnExpired": "Termine di recesso scaduto dal {date} — cambio solo per rottura o smarrimento del corriere",
@@ -577,7 +578,6 @@ const it: Partial<Dictionary> = {
   "steps.validation": "Conferma",
   "selection.banner": "Seleziona gli articoli da restituire o cambiare",
   "selection.noneEligible": "Nessun articolo di questo ordine è idoneo (stati idonei: {states}).",
-  "selection.notEligible": "{count} articolo/i non idoneo/i al reso o al cambio",
   "article.qty": "Qtà {qty}",
   "config.banner": "Scegli le opzioni di reso o cambio",
   "config.return": "Reso",

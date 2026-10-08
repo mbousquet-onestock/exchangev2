@@ -173,18 +173,10 @@ export function ExchangeWorkflow({
       {eligible.map((a) => (
         <ArticleCard key={a.id} article={a} isSelected={selectedIds.includes(a.id)} onToggle={toggle} />
       ))}
-      {notEligible.length > 0 && (
-        <details className="pt-2">
-          <summary className="text-[12px] font-semibold text-gray-500 cursor-pointer select-none">
-            {t("selection.notEligible", { count: notEligible.length })}
-          </summary>
-          <div className="mt-2">
-            {notEligible.map((a) => (
-              <ArticleCard key={a.id} article={a} isSelected={false} />
-            ))}
-          </div>
-        </details>
-      )}
+      {/* Not eligible lines are listed after the others, greyed out, with the reason. */}
+      {notEligible.map((a) => (
+        <ArticleCard key={a.id} article={a} isSelected={false} />
+      ))}
     </div>
   );
 

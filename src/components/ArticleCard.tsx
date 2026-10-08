@@ -34,7 +34,13 @@ export function ArticleCard({
         <h3 className="text-[14px] font-bold text-gray-800 leading-tight mb-0.5 truncate">{article.name}</h3>
         <p className="text-[13px] text-gray-600 font-medium">{details}</p>
         <p className="text-[11px] text-gray-400 tracking-tight font-medium">{article.sku}</p>
-        {!disabled && <ReturnInfo article={article} t={t} formatDate={formatDate} />}
+        {disabled ? (
+          <p className="text-[11px] text-gray-500 font-medium">
+            {t("article.notEligible", { state: stateLabel(article.state) })}
+          </p>
+        ) : (
+          <ReturnInfo article={article} t={t} formatDate={formatDate} />
+        )}
       </div>
       <div className="flex items-center gap-3 pr-1">
         <span
