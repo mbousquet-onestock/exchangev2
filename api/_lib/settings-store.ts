@@ -123,6 +123,23 @@ export async function readMerged(
   return { values, secrets };
 }
 
+const hasCredentials = (values: Record<string, string>) =>
+  !!values.onestock_token || (!!values.onestock_user_id && !!values.onestock_password);
+
+/**
+ * OneStock credentials (decrypted) for a site and an environment. In prod, when
+ * none are stored, the qualif ones are used.
+ */
+export async function readCredentials(
+  siteId: string,
+  environment: string,
+): Promise<{ values: Record<string, string>; environment: string }> {
+  const { values } = await readMerged(siteId, environment, { withSecrets: true });
+  if (environment !== "prod" || hasCredentials(values)) return { values, environment };
+  const qualif = (await readMerged(siteId, "qualif", { withSecrets: true })).values;
+  return hasCredentials(qualif) ? { values: qualif, environment: "qualif" } : { values, environment };
+}
+
 /** Creates or replaces settings of this extension (site_id "" = all sites). Secrets are encrypted by the API. */
 export async function writeSettings(siteId: string, environment: string, values: Record<string, string>) {
   for (const [key, value] of Object.entries(values)) {

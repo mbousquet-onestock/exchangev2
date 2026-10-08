@@ -154,6 +154,53 @@ export const remoteEnvironment = (environment: Environment) => (environment === 
 
 export type SettingsScope = "site" | "global";
 
+/** Keys owned by this app (the shared OneStock credentials excluded): tell whether the Settings API was initialised. */
+const APP_KEYS = new Set(
+  (Object.keys(DEFAULT_SETTINGS) as (keyof Settings)[])
+    .filter((field) => !isLocalOnly(field) && !(field in REMOTE_KEYS))
+    .map(remoteKey),
+);
+
+/** Settings API values of the given settings: only `fields`, empty values are listed apart (to delete). */
+function toRemote(settings: Settings, fields: (keyof Settings)[]) {
+  const values: Record<string, string> = {};
+  const remove: string[] = [];
+  for (const field of fields) {
+    const value = String(settings[field] ?? "");
+    if (value) values[remoteKey(field)] = value;
+    else if (!SECRET_FIELDS.includes(field)) remove.push(remoteKey(field));
+  }
+  return { values, remove };
+}
+
+async function putSettings(body: {
+  site_id: string;
+  environment: string;
+  scope: SettingsScope;
+  values: Record<string, string>;
+  remove?: string[];
+}) {
+  const response = await fetch("/api/settings", {
+    method: "PUT",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error ?? `HTTP ${response.status}`);
+  }
+}
+
+/** First-launch initialisations in progress / done, per environment (shared by all renders). */
+const seedings = new Map<string, Promise<void>>();
+
+async function getSettings(siteId: string, environment: string) {
+  const response = await fetch(`/api/settings?${new URLSearchParams({ site_id: siteId, environment })}`);
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(body.error ?? `HTTP ${response.status}`);
+  return body as { values: Record<string, string>; secrets: string[] };
+}
+
 export interface SettingsStorage {
   /** "remote" = Settings API, "local" = this browser (API not configured or unreachable). */
   mode: "loading" | "remote" | "local";
@@ -162,6 +209,8 @@ export interface SettingsStorage {
   environment: string;
   /** Secret settings stored remotely (their values are never sent to the browser). */
   secrets: string[];
+  /** Set when this launch created the settings in the Settings API (first launch). */
+  initialized?: boolean;
 }
 
 function fromRemote(values: Record<string, string>): Partial<Settings> {
@@ -205,28 +254,53 @@ export function useSettings(contextSiteId?: string) {
 
   useEffect(() => {
     let cancelled = false;
-    const params = new URLSearchParams({ site_id: siteId, environment });
-    fetch(`/api/settings?${params}`)
-      .then(async (response) => {
-        const body = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(body.error ?? `HTTP ${response.status}`);
-        return body as { values: Record<string, string>; secrets: string[] };
-      })
-      .then(
-        (body) => {
-          if (cancelled) return;
-          setRemote(body);
-          setStorage({ mode: "remote", siteId, environment, secrets: body.secrets });
-        },
-        (error: Error) => {
-          if (cancelled) return;
-          setRemote(null);
-          setStorage({ mode: "local", siteId, environment, secrets: [], error: error.message });
-        },
-      );
+    const load = async () => {
+      let body = await getSettings(siteId, environment);
+      // First launch for an environment: the Settings API has none of this app's settings yet.
+      if (!Object.keys(body.values).some((key) => APP_KEYS.has(key))) {
+        // Initialise them once for all sites with this browser's settings (defaults when none were
+        // saved), OneStock credentials included; the API encrypts the secrets.
+        let seeding = seedings.get(environment);
+        if (!seeding) {
+          const fields = (Object.keys(DEFAULT_SETTINGS) as (keyof Settings)[]).filter((f) => !isLocalOnly(f));
+          seeding = putSettings({
+            site_id: "",
+            environment,
+            scope: "global",
+            values: toRemote(local, fields).values,
+          }).catch((error) => {
+            seedings.delete(environment); // retried on the next load
+            throw error;
+          });
+          seedings.set(environment, seeding);
+        }
+        await seeding;
+        if (local.token || local.password) {
+          const cleared = { ...local, token: "", password: "" };
+          setLocal(cleared);
+          persistLocal(cleared);
+        }
+        body = await getSettings(siteId, environment);
+      }
+      // Initialised during this session (whichever load did it).
+      return { body, initialized: seedings.has(environment) };
+    };
+    load().then(
+      ({ body, initialized }) => {
+        if (cancelled) return;
+        setRemote(body);
+        setStorage({ mode: "remote", siteId, environment, secrets: body.secrets, initialized });
+      },
+      (error: Error) => {
+        if (cancelled) return;
+        setRemote(null);
+        setStorage({ mode: "local", siteId, environment, secrets: [], error: error.message });
+      },
+    );
     return () => {
       cancelled = true;
     };
+    // `local` is only read for the first-launch initialisation.
   }, [siteId, environment, reloadKey]);
 
   const settings = useMemo<Settings>(() => {
@@ -255,25 +329,14 @@ export function useSettings(contextSiteId?: string) {
       persistLocal(nextLocal);
       if (!remote) return;
 
-      // Only what changed; an empty secret means "keep the stored one".
-      const values: Record<string, string> = {};
-      for (const field of Object.keys(DEFAULT_SETTINGS) as (keyof Settings)[]) {
-        if (isLocalOnly(field)) continue;
-        const value = next[field];
-        if (SECRET_FIELDS.includes(field) ? !value : String(value) === String(settings[field])) continue;
-        values[remoteKey(field)] = String(value);
-      }
-      if (Object.keys(values).length) {
-        const response = await fetch("/api/settings", {
-          method: "PUT",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ site_id: siteId, environment, scope, values }),
-        });
-        if (!response.ok) {
-          const body = await response.json().catch(() => ({}));
-          throw new Error(body.error ?? `HTTP ${response.status}`);
-        }
-      }
+      // Only what changed; an empty secret means "keep the stored one", another empty value is deleted.
+      const changed = (Object.keys(DEFAULT_SETTINGS) as (keyof Settings)[]).filter(
+        (field) =>
+          !isLocalOnly(field) &&
+          (SECRET_FIELDS.includes(field) ? !!next[field] : String(next[field]) !== String(settings[field])),
+      );
+      const { values, remove } = toRemote(next, changed);
+      if (changed.length) await putSettings({ site_id: siteId, environment, scope, values, remove });
       setReloadKey((k) => k + 1);
     },
     [local, remote, settings, siteId, environment],

@@ -92,6 +92,10 @@ function `api/settings.ts`, so that the API key never reaches the browser.
   `extension_id` = `exchange`. Keys are the field names in snake_case
   (`stock_request_name`, `return_state`…); the OneStock credentials use
   `onestock_token`, `onestock_user_id`, `onestock_password`.
+- First launch: when the Settings API holds none of this app's settings for the
+  environment, the app creates them for all sites (`site_id` empty) from this
+  browser's settings, or the defaults (credentials typed in this browser are
+  sent too, encrypted by the API, then removed from the browser).
 - The site / order fallback ids and the environment stay in the browser: they
   select which settings to read.
 - When the Settings API is not configured or unreachable, the app falls back on
@@ -100,7 +104,8 @@ function `api/settings.ts`, so that the API key never reaches the browser.
 The OneStock credentials are added server-side by the proxy: when a call has no
 token, `api/proxy.ts` reads `onestock_token` (or logs in with
 `onestock_user_id` / `onestock_password`) from the Settings API for the call's
-site and environment. Values are decrypted by the API (`decrypt=1`), or locally
+site and environment. In `prod`, when no credentials are stored, the `qualif`
+ones are used. Values are decrypted by the API (`decrypt=1`), or locally
 with `SETTINGS_ENCRYPTION_KEY` (`api/_lib/settings-secrets.ts`, AES-256-GCM
 `enc:v1:`) when the API cannot.
 

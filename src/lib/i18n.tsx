@@ -4,6 +4,8 @@ export const LANGUAGES = ["en", "fr", "es", "de", "it"] as const;
 export type Language = (typeof LANGUAGES)[number];
 
 const en = {
+  "settings.initialized":
+    "First launch: the settings were created in the Settings API for all sites (environment {env}), from this browser's settings or the defaults.",
   "settings.storedRemote":
     "Settings stored in the Settings API — site {site}, environment {env}. Secrets (token, password) stay on the server.",
   "settings.storedLocal": "Settings API unavailable ({detail}) — settings stored in this browser only.",
@@ -203,6 +205,8 @@ export type MessageKey = keyof typeof en;
 type Dictionary = Record<MessageKey, string>;
 
 const fr: Dictionary = {
+  "settings.initialized":
+    "Premier lancement : les paramètres ont été créés dans l'API Settings pour tous les sites (environnement {env}), à partir des paramètres de ce navigateur ou des valeurs par défaut.",
   "settings.storedRemote":
     "Paramètres enregistrés dans l'API Settings — site {site}, environnement {env}. Les secrets (token, mot de passe) restent côté serveur.",
   "settings.storedLocal":

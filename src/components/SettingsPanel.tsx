@@ -109,6 +109,9 @@ export function SettingsPanel({
             : t("settings.storedLocal", { detail: storage.error ?? "" })
         }
       />
+      {storage.initialized && (
+        <InfoBanner tone="success" text={t("settings.initialized", { env: storage.environment })} />
+      )}
       {saveError && <InfoBanner tone="error" text={t("settings.saveError", { detail: saveError })} />}
 
       <Section title="settings.context">

@@ -1,7 +1,13 @@
 // Settings of this extension, stored in the Settings API of the Extensions app.
 // GET  ?site_id=&environment=  -> { values, secrets } (secret values are never returned)
 // PUT  { site_id, environment, scope: "site" | "global", values, remove } -> { saved, removed }
-import { deleteSettings, readMerged, settingsConfigured, SettingsApiError, writeSettings } from "./_lib/settings-store.js";
+import {
+  deleteSettings,
+  readMerged,
+  settingsConfigured,
+  SettingsApiError,
+  writeSettings,
+} from "./_lib/settings-store.js";
 
 function json(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
@@ -19,7 +25,17 @@ export async function GET(request: Request): Promise<Response> {
   const environment = params.get("environment");
   if (!environment) return json(400, { error: "missing_fields: environment" });
   try {
-    return json(200, await readMerged(params.get("site_id") ?? "", environment));
+    const siteId = params.get("site_id") ?? "";
+    const result = await readMerged(siteId, environment);
+    // Prod without its own token: the proxy uses the qualif one.
+    if (environment === "prod" && !result.secrets.includes("onestock_token")) {
+      const qualif = await readMerged(siteId, "qualif");
+      if (qualif.secrets.includes("onestock_token")) {
+        result.secrets.push("onestock_token");
+        return json(200, { ...result, tokenEnvironment: "qualif" });
+      }
+    }
+    return json(200, result);
   } catch (error) {
     return fail(error);
   }
