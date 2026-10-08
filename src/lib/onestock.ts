@@ -145,6 +145,8 @@ export interface RawOrder {
   pricing_details?: { currency?: string; address?: RawAddress };
   order_items?: RawOrderItem[];
   line_item_groups?: RawLineItemGroup[];
+  /** Parcels: their creation date is the shipping date of their lines. */
+  parcels?: { id: string; date?: number; state?: string }[];
 }
 
 export interface RawAddress {
@@ -178,6 +180,7 @@ export interface RawLineItemGroup {
   endpoint_id?: string;
   /** Date of the last state change (seconds). */
   last_update?: number;
+  parcel_id?: string;
   item?: { features?: Record<string, unknown> };
 }
 
@@ -379,9 +382,9 @@ export function parseBoolean(value: unknown): boolean | undefined {
 
 /**
  * Return rules from the item sheet: the item must be return-eligible and the
- * withdrawal period (days) must not be over. It starts at the last state change
- * of the line (fulfilment / delivery), or at the order date. Missing features
- * do not block the return.
+ * withdrawal period (days) must not be over. It starts at the shipping date: the
+ * creation date of the line's parcel (else the last state change of the line,
+ * else the order date). Missing features do not block the return.
  */
 function returnRules(
   features: Record<string, unknown>,
@@ -403,6 +406,7 @@ export function toArticles(order: RawOrder, settings: Settings, now = new Date()
   const eligibleStates = new Set(splitList(settings.eligibleStates).map((s) => s.toLowerCase()));
   const orderItems = order.order_items ?? [];
   const byId = new Map(orderItems.map((oi) => [oi.id ?? oi._id ?? "", oi]));
+  const parcelDates = new Map((order.parcels ?? []).map((p) => [p.id, p.date]));
   const orderCurrency = order.pricing_details?.currency || "EUR";
 
   const fromItem = (
@@ -432,7 +436,12 @@ export function toArticles(order: RawOrder, settings: Settings, now = new Date()
       substitutionIds: settings.featureSubstitution
         ? parseIdList(features[settings.featureSubstitution]).filter((id) => id !== itemId)
         : [],
-      ...returnRules(features, settings, lig?.last_update ?? order.date, now),
+      ...returnRules(
+        features,
+        settings,
+        (lig?.parcel_id && parcelDates.get(lig.parcel_id)) || lig?.last_update || order.date,
+        now,
+      ),
     };
   };
 

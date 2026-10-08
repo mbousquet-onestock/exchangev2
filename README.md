@@ -24,8 +24,9 @@ from the OneStock API and shows the articles eligible for an exchange.
    listed as not eligible.
    **Return rules** (item sheet): a return needs `eligible_retour` to be true
    (oui / true / 1) and the withdrawal period `delai_retractation` (days) not to
-   be over; it starts at the last state change of the line (fulfilment /
-   delivery), or at the order date. A missing feature does not block the
+   be over; it starts at the shipping date: creation date of the line's parcel
+   (`parcels.date` via `line_item_groups.parcel_id`), else the last state change
+   of the line, else the order date. A missing feature does not block the
    return. Items that cannot be returned can still be exchanged (reshipped).
 4. **Language** (`src/lib/i18n.tsx`) — the interface follows the `lang` (and
    `locale`, for prices) sent in the context: English, French, Spanish, German
