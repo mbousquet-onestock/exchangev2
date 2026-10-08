@@ -1,7 +1,7 @@
 // Proxy towards the OneStock API: works around CORS (/api/proxy?url=<target>) and
 // adds the OneStock credentials kept in the Settings API, so that the token never
 // reaches the browser. Only OneStock hosts are allowed as targets.
-import { readMerged, settingsConfigured } from "./_lib/settings-store";
+import { readMerged, settingsConfigured } from "./_lib/settings-store.js";
 
 const ALLOWED_HOST = /(^|\.)onestock-retail\.com$/i;
 const FORWARDED_HEADERS = ["content-type", "x-http-method-override", "auth-user", "auth-password"];

@@ -8,7 +8,7 @@
  * - SETTINGS_ENCRYPTION_KEY optional, to decrypt `enc:v1:` values locally
  * - SETTINGS_EXTENSION_ID  extension_id of this app's settings, default "exchange"
  */
-import { decryptSetting, isEncrypted } from "./settings-secrets";
+import { decryptSetting, isEncrypted } from "./settings-secrets.js";
 
 export interface RemoteSetting {
   key: string;

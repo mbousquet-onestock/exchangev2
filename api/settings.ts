@@ -1,7 +1,7 @@
 // Settings of this extension, stored in the Settings API of the Extensions app.
 // GET  ?site_id=&environment=  -> { values, secrets } (secret values are never returned)
 // PUT  { site_id, environment, scope: "site" | "global", values, remove } -> { saved, removed }
-import { deleteSettings, readMerged, settingsConfigured, SettingsApiError, writeSettings } from "./_lib/settings-store";
+import { deleteSettings, readMerged, settingsConfigured, SettingsApiError, writeSettings } from "./_lib/settings-store.js";
 
 function json(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
